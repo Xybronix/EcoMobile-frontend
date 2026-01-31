@@ -1,16 +1,25 @@
-const getApiBaseUrl = (): string => {
+export const getApiBaseUrl = (): string => {
   if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
-    return (import.meta as any).env.VITE_API_URL || 'http://localhost:5000/api/v1';
+    return (import.meta as any).env.VITE_API_URL || 'http://localhost:10000/api/v1';
   }
   
-  if (process.env.NODE_ENV === 'production') {
-    return 'https://ecomobile-8bx0.onrender.com/api/v1';
+  if ((import.meta as any).env.VITE_NODE_ENV === 'production') {
+    return 'https://env-freebike-xybronix.hidora.com/api/v1';
   }
   
-  return 'http://localhost:5000/api/v1';
+  return 'http://localhost:10000/api/v1';
 };
 
 const API_BASE_URL = getApiBaseUrl();
+
+/**
+ * Obtient l'URL de base du serveur sans le préfixe /api/v1
+ * Utile pour les ressources statiques comme les images
+ */
+export const getBaseUrl = (): string => {
+  const apiUrl = getApiBaseUrl();
+  return apiUrl.replace(/\/api\/v1\/?$/, '');
+};
 
 
 export class TokenManager {

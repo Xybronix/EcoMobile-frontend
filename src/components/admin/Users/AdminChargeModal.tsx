@@ -11,6 +11,7 @@ import { walletService } from '../../../services/api/wallet.service';
 import { bikeService, type BikePosition } from '../../../services/api/bike.service';
 import { userService, type User as UserType } from '../../../services/api/user.service';
 import { incidentService } from '../../../services/api/incident.service';
+import { useTranslation } from '../../../lib/i18n';
 
 interface AdminChargeModalProps {
   open: boolean;
@@ -18,6 +19,8 @@ interface AdminChargeModalProps {
   onSuccess?: () => void;
   preselectedUserId?: string;
   preselectedBikeId?: string;
+  chargeId?: string; // ID de la charge à modifier (optionnel)
+  isEditMode?: boolean; // Mode édition ou création
 }
 
 export function AdminChargeModal({ 
@@ -25,8 +28,11 @@ export function AdminChargeModal({
   onClose, 
   onSuccess,
   preselectedUserId,
-  preselectedBikeId 
+  preselectedBikeId,
+  chargeId,
+  isEditMode = false
 }: AdminChargeModalProps) {
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [users, setUsers] = useState<UserType[]>([]);
   const [bikes, setBikes] = useState<BikePosition[]>([]);
@@ -44,9 +50,22 @@ export function AdminChargeModal({
 
   useEffect(() => {
     if (open) {
-      loadData();
+      if (isEditMode && chargeId) {
+        loadChargeData();
+      } else {
+        loadData();
+      }
+    } else {
+      // Reset form when modal closes
+      setFormData({
+        userId: preselectedUserId || '',
+        bikeId: preselectedBikeId || 'none',
+        amount: '',
+        reason: '',
+        description: ''
+      });
     }
-  }, [open]);
+  }, [open, isEditMode, chargeId]);
 
   useEffect(() => {
     if (preselectedUserId) {
@@ -83,6 +102,51 @@ export function AdminChargeModal({
     }
   };
 
+  const loadChargeData = async () => {
+    if (!chargeId) return;
+    
+    try {
+      setLoadingData(true);
+      
+      // Charger les données de base (users et bikes)
+      const [usersData, bikesData] = await Promise.all([
+        userService.getAllUsers({ limit: 100, role: 'USER' }),
+        bikeService.getAllBikes({ limit: 100 })
+      ]);
+      
+      setUsers(usersData.users);
+      setBikes(bikesData.bikes);
+      
+      // Récupérer la charge via l'endpoint admin incidents avec un filtre large
+      const incidentData = await incidentService.getIncidents({ limit: 1000 });
+      const charge = incidentData.incidents.find((inc: any) => inc.id === chargeId && inc.type === 'admin_charge');
+      
+      if (charge) {
+        // Extraire la raison et la description depuis la description
+        // Format: "reason: description" ou juste "reason"
+        const descriptionParts = charge.description.split(': ');
+        const reason = descriptionParts[0] || '';
+        const description = descriptionParts.length > 1 ? descriptionParts.slice(1).join(': ') : '';
+        
+        setFormData({
+          userId: charge.userId,
+          bikeId: charge.bikeId || 'none',
+          amount: charge.refundAmount?.toString() || '',
+          reason: reason,
+          description: description
+        });
+      } else {
+        toast.error('Charge non trouvée');
+        onClose();
+      }
+    } catch (error) {
+      console.error('Error loading charge data:', error);
+      toast.error('Erreur lors du chargement de la charge');
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!formData.userId || !formData.amount || !formData.reason) {
       toast.error('Veuillez remplir tous les champs obligatoires');
@@ -98,16 +162,28 @@ export function AdminChargeModal({
     try {
       setIsLoading(true);
 
-      // Appeler l'API pour créer la charge via le service
-      await incidentService.createAdminCharge({
-        userId: formData.userId,
-        bikeId: formData.bikeId && formData.bikeId !== 'none' ? formData.bikeId : undefined,
-        amount,
-        reason: formData.reason,
-        description: formData.description
-      });
+      if (isEditMode && chargeId) {
+        // Modifier la charge existante
+        await incidentService.updateAdminCharge(chargeId, {
+          bikeId: formData.bikeId && formData.bikeId !== 'none' ? formData.bikeId : undefined,
+          amount,
+          reason: formData.reason,
+          description: formData.description
+        });
 
-      toast.success(`Charge de ${amount} FCFA affectée avec succès`);
+        toast.success(`Charge de ${amount} FCFA modifiée avec succès`);
+      } else {
+        // Créer une nouvelle charge
+        await incidentService.createAdminCharge({
+          userId: formData.userId,
+          bikeId: formData.bikeId && formData.bikeId !== 'none' ? formData.bikeId : undefined,
+          amount,
+          reason: formData.reason,
+          description: formData.description
+        });
+
+        toast.success(`Charge de ${amount} FCFA affectée avec succès`);
+      }
       
       // Reset form
       setFormData({
@@ -121,8 +197,8 @@ export function AdminChargeModal({
       onSuccess?.();
       onClose();
     } catch (error: any) {
-      console.error('Error creating charge:', error);
-      toast.error(error.message || 'Erreur lors de la création de la charge');
+      console.error(`Error ${isEditMode ? 'updating' : 'creating'} charge:`, error);
+      toast.error(error.message || `Erreur lors de la ${isEditMode ? 'modification' : 'création'} de la charge`);
     } finally {
       setIsLoading(false);
     }
@@ -144,10 +220,12 @@ export function AdminChargeModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-orange-500" />
-            Affecter une charge à un utilisateur
+            {isEditMode ? 'Modifier la charge' : 'Affecter une charge à un utilisateur'}
           </DialogTitle>
           <DialogDescription>
-            Créez une charge administrative qui sera déduite de la caution de l'utilisateur
+            {isEditMode 
+              ? 'Modifiez les informations de la charge administrative'
+              : 'Créez une charge administrative qui sera déduite de la caution de l\'utilisateur'}
           </DialogDescription>
         </DialogHeader>
 
@@ -159,7 +237,7 @@ export function AdminChargeModal({
             </div>
           ) : (
             <>
-              {/* Sélection utilisateur */}
+              {/* Sélection utilisateur (désactivé en mode édition) */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <User className="w-4 h-4" />
@@ -168,6 +246,7 @@ export function AdminChargeModal({
                 <Select 
                   value={formData.userId} 
                   onValueChange={(value) => setFormData(prev => ({ ...prev, userId: value }))}
+                  disabled={isEditMode}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner un utilisateur" />
@@ -271,15 +350,21 @@ export function AdminChargeModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
-            Annuler
+          <Button 
+            variant="outline" 
+            onClick={onClose} 
+            disabled={isLoading}
+            aria-label={t('aria.cancel') || 'Annuler'}
+          >
+            {t('common.cancel') || 'Annuler'}
           </Button>
           <Button 
             onClick={handleSubmit} 
             disabled={isLoading || loadingData || !formData.userId || !formData.amount || !formData.reason}
             className="bg-orange-600 hover:bg-orange-700"
+            aria-label={isEditMode ? (t('aria.editCharge') || 'Modifier la charge') : (t('aria.assignCharge') || 'Affecter la charge')}
           >
-            {isLoading ? 'Traitement...' : 'Affecter la charge'}
+            {isLoading ? (t('common.processing') || 'Traitement...') : isEditMode ? (t('charges.edit') || 'Modifier la charge') : (t('charges.assign') || 'Affecter la charge')}
           </Button>
         </DialogFooter>
       </DialogContent>

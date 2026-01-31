@@ -1,4 +1,4 @@
-import { apiClient, getAuthToken } from './client';
+import { apiClient, getAuthToken, getApiBaseUrl } from './client';
 
 export interface Reservation {
   id: string;
@@ -56,17 +56,6 @@ export interface ReservationFilters {
   limit?: number;
   search?: string;
 }
-
-const getApiBaseUrl = (): string => {
-  if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
-    return (import.meta as any).env.VITE_API_URL || 'http://localhost:5000/api/v1';
-  }
-  if (process.env.NODE_ENV === 'production') {
-    return 'https://ecomobile-8bx0.onrender.com/api/v1';
-  }
-  
-  return 'http://localhost:5000/api/v1';
-};
 
 export class ReservationService {
   /**
@@ -236,8 +225,8 @@ export class ReservationService {
 
     queryParams.append('export', 'true');
 
-    const token = getAuthToken(); // Utiliser la fonction exportée
-    const apiBaseUrl = getApiBaseUrl(); // Utiliser la fonction locale pour obtenir l'URL de base
+    const token = getAuthToken();
+    const apiBaseUrl = getApiBaseUrl();
     
     const response = await fetch(`${apiBaseUrl}/admin/reservations/export?${queryParams}`, {
       headers: {

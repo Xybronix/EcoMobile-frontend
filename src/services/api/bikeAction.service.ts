@@ -1,16 +1,4 @@
-import { apiClient } from './client';
-
-const API_BASE_URL = (() => {
-  if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
-    return (import.meta as any).env.VITE_API_URL || 'http://localhost:5000/api/v1';
-  }
-  
-  if (process.env.NODE_ENV === 'production') {
-    return 'https://ecomobile-8bx0.onrender.com/api/v1';
-  }
-  
-  return 'http://localhost:5000/api/v1';
-})();
+import { apiClient, getBaseUrl } from './client';
 
 export interface UnlockRequest {
   id: string;
@@ -139,21 +127,6 @@ export interface PaginatedRequests<T> {
 }
 
 export const normalizeImageUrls = (images: string[]): string[] => {
-  // Obtenir l'URL de base sans /api/v1 pour les images statiques
-  const getBaseUrl = () => {
-    if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
-      const apiUrl = (import.meta as any).env.VITE_API_URL || 'http://localhost:5000/api/v1';
-      // Enlever /api/v1 si présent
-      return apiUrl.replace(/\/api\/v1\/?$/, '');
-    }
-    
-    if (process.env.NODE_ENV === 'production') {
-      return 'https://ecomobile-8bx0.onrender.com';
-    }
-    
-    return 'http://localhost:5000';
-  };
-
   const baseUrl = getBaseUrl();
 
   return images.map(img => {

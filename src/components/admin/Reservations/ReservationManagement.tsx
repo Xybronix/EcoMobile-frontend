@@ -8,8 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../ui/dialog';
 import { reservationService } from '../../../services/api/reservation.service';
 import { toast } from 'sonner';
+import { useTranslation } from '../../../lib/i18n';
 
 export function ReservationManagement() {
+  const { t } = useTranslation();
   const [reservations, setReservations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -74,8 +76,8 @@ export function ReservationManagement() {
   return (
     <div className="p-4 md:p-8 space-y-6">
       <div>
-        <h1 className="text-green-600">Gestion des Réservations</h1>
-        <p className="text-gray-600">Suivi et gestion des réservations de vélos</p>
+        <h1 className="text-green-600">{t('reservations.management') || 'Gestion des Réservations'}</h1>
+        <p className="text-gray-600">{t('reservations.overview') || 'Suivi et gestion des réservations de vélos'}</p>
       </div>
 
       {/* Summary Cards */}
@@ -143,10 +145,11 @@ export function ReservationManagement() {
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder="Rechercher par utilisateur ou plan..."
+              placeholder={t('reservations.searchPlaceholder') || 'Rechercher par utilisateur ou plan...'}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
+              aria-label={t('aria.search')}
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -220,9 +223,11 @@ export function ReservationManagement() {
                   variant="outline"
                   size="sm"
                   onClick={() => setSelectedReservation(reservation)}
+                  aria-label={t('aria.viewReservationDetails') || 'Voir les détails de la réservation'}
+                  title={t('aria.viewReservationDetails') || 'Voir les détails de la réservation'}
                 >
                   <Eye className="w-4 h-4 mr-2" />
-                  Détails
+                  {t('common.viewDetails')}
                 </Button>
               </div>
             </div>
@@ -279,8 +284,8 @@ export function ReservationManagement() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setSelectedReservation(null)}>
-                Fermer
+              <Button variant="outline" onClick={() => setSelectedReservation(null)} aria-label={t('aria.close')}>
+                {t('common.close')}
               </Button>
             </DialogFooter>
           </DialogContent>

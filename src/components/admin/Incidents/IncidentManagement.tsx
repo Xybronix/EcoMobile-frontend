@@ -9,8 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogDescription, DialogTitle, Di
 import { Textarea } from '../../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { toast } from 'sonner';
+import { useTranslation } from '../../../lib/i18n';
 
 export function IncidentManagement() {
+  const { t } = useTranslation();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -148,8 +150,8 @@ export function IncidentManagement() {
   return (
     <div className="p-4 md:p-8 space-y-6">
       <div>
-        <h1 className="text-green-600">Gestion des Signalements</h1>
-        <p className="text-gray-600">Traitement des incidents et remboursements</p>
+        <h1 className="text-green-600">{t('incidents.management') || 'Gestion des Signalements'}</h1>
+        <p className="text-gray-600">{t('incidents.overview') || 'Traitement des incidents et remboursements'}</p>
       </div>
 
       {/* Summary Cards */}
@@ -206,10 +208,11 @@ export function IncidentManagement() {
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder="Rechercher par utilisateur, vélo ou description..."
+              placeholder={t('incidents.searchPlaceholder') || 'Rechercher par utilisateur, vélo ou description...'}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
+              aria-label={t('aria.search')}
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -265,9 +268,11 @@ export function IncidentManagement() {
                   variant="outline"
                   size="sm"
                   onClick={() => setSelectedIncident(incident)}
+                  aria-label={t('aria.viewIncidentDetails') || 'Voir les détails du signalement'}
+                  title={t('aria.viewIncidentDetails') || 'Voir les détails du signalement'}
                 >
                   <Eye className="w-4 h-4 mr-2" />
-                  Détails
+                  {t('common.viewDetails')}
                 </Button>
                 {incident.status === 'OPEN' && (
                   <Button
@@ -277,9 +282,11 @@ export function IncidentManagement() {
                       setSelectedIncident(incident);
                       setRefundAmount('200');
                     }}
+                    aria-label={t('aria.processIncident') || 'Traiter le signalement'}
+                    title={t('aria.processIncident') || 'Traiter le signalement'}
                   >
                     <Check className="w-4 h-4 mr-2" />
-                    Traiter
+                    {t('incidents.process') || 'Traiter'}
                   </Button>
                 )}
               </div>

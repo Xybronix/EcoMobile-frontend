@@ -647,21 +647,21 @@ export function PricingConfig() {
     <div className="p-4 md:p-8 space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-green-600">Configuration Tarifaire</h1>
-          <p className="text-gray-600">Gestion des tarifs et règles de tarification dynamique</p>
+          <h1 className="text-green-600">{t('pricing.management') || 'Configuration Tarifaire'}</h1>
+          <p className="text-gray-600">{t('pricing.overview') || 'Gestion des tarifs et règles de tarification dynamique'}</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleAddNewPromotion} variant="outline">
+          <Button onClick={handleAddNewPromotion} variant="outline" aria-label={t('aria.addPromotion') || 'Ajouter une nouvelle promotion'} title={t('aria.addPromotion') || 'Ajouter une nouvelle promotion'}>
             <Tag className="w-4 h-4 mr-2" />
-            Nouvelle Promotion
+            {t('pricing.newPromotion') || 'Nouvelle Promotion'}
           </Button>
-          <Button onClick={handleAddNewRule} variant="outline">
+          <Button onClick={handleAddNewRule} variant="outline" aria-label={t('aria.addRule') || 'Ajouter une nouvelle règle'} title={t('aria.addRule') || 'Ajouter une nouvelle règle'}>
             <Clock className="w-4 h-4 mr-2" />
-            Nouvelle Règle
+            {t('pricing.newRule') || 'Nouvelle Règle'}
           </Button>
-          <Button onClick={handleAddNewPlan}>
+          <Button onClick={handleAddNewPlan} aria-label={t('aria.addPlan') || 'Ajouter un nouveau forfait'} title={t('aria.addPlan') || 'Ajouter un nouveau forfait'}>
             <Plus className="w-4 h-4 mr-2" />
-            Nouveau Plan
+            {t('pricing.newPlan') || 'Nouveau Plan'}
           </Button>
         </div>
       </div>
@@ -671,7 +671,7 @@ export function PricingConfig() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Frais de Déverrouillage</p>
+              <p className="text-sm text-gray-600">{t('pricing.unlockFee') || 'Frais de Déverrouillage'}</p>
               <p className="text-gray-900">{formatPrice(pricingConfig?.unlockFee || 0)} FCFA</p>
             </div>
             <div className="bg-green-100 text-green-600 p-3 rounded-lg">
@@ -693,7 +693,7 @@ export function PricingConfig() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Règles Actives</p>
+              <p className="text-sm text-gray-600">{t('pricing.activeRules') || 'Règles Actives'}</p>
               <p className="text-gray-900">{activeRules.length}</p>
             </div>
             <div className="bg-orange-100 text-orange-600 p-3 rounded-lg">
@@ -704,7 +704,7 @@ export function PricingConfig() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Promotions Actives</p>
+              <p className="text-sm text-gray-600">{t('pricing.activePromotions') || 'Promotions Actives'}</p>
               <p className="text-gray-900">{activePromotions.length}</p>
             </div>
             <div className="bg-purple-100 text-purple-600 p-3 rounded-lg">
@@ -717,14 +717,14 @@ export function PricingConfig() {
       {/* Pricing Plans */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2>Plans Tarifaires</h2>
+          <h2>{t('pricing.pricingPlans') || 'Plans Tarifaires'}</h2>
           <div className="flex items-center gap-2">
             <Badge variant={activePlans.length === pricingConfig?.plans?.length ? "default" : "outline"}>
-              {activePlans.length}/{pricingConfig?.plans?.length || 0} actifs
+              {activePlans.length}/{pricingConfig?.plans?.length || 0} {t('pricing.active') || 'actifs'}
             </Badge>
-            <Button onClick={handleAddNewPlan}>
+            <Button onClick={handleAddNewPlan} aria-label={t('aria.addPlan') || 'Ajouter un nouveau forfait'} title={t('aria.addPlan') || 'Ajouter un nouveau forfait'}>
               <Plus className="w-4 h-4 mr-2" />
-              Nouveau Plan
+              {t('pricing.newPlan') || 'Nouveau Plan'}
             </Button>
           </div>
         </div>
@@ -768,7 +768,8 @@ export function PricingConfig() {
                     variant="ghost"
                     size="sm"
                     onClick={() => handleTogglePlanStatus(plan)}
-                    title={plan.isActive ? 'Désactiver' : 'Activer'}
+                    title={plan.isActive ? (t('pricing.deactivate') || 'Désactiver') : (t('pricing.activate') || 'Activer')}
+                    aria-label={plan.isActive ? (t('aria.deactivate') || 'Désactiver') : (t('aria.activate') || 'Activer')}
                   >
                     {plan.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </Button>
@@ -819,12 +820,12 @@ export function PricingConfig() {
           <div className="flex items-center gap-4">
             <h2>Règles de Tarification Dynamique</h2>
             <Badge variant={activeRules.length === pricingConfig?.rules?.length ? "default" : "outline"}>
-              {activeRules.length}/{pricingConfig?.rules?.length || 0} actives
+              {activeRules.length}/{pricingConfig?.rules?.length || 0} {t('pricing.active') || 'actives'}
             </Badge>
           </div>
-          <Button variant="outline" onClick={handleAddNewRule}>
+          <Button variant="outline" onClick={handleAddNewRule} aria-label={t('aria.addRule') || 'Ajouter une nouvelle règle'} title={t('aria.addRule') || 'Ajouter une nouvelle règle'}>
             <Plus className="w-4 h-4 mr-2" />
-            Ajouter une Règle
+            {t('pricing.newRule') || 'Ajouter une Règle'}
           </Button>
         </div>
         <div className="space-y-4">
@@ -870,7 +871,8 @@ export function PricingConfig() {
                     variant="ghost"
                     size="sm"
                     onClick={() => handleToggleRuleStatus(rule)}
-                    title={rule.isActive ? 'Désactiver' : 'Activer'}
+                    title={rule.isActive ? (t('pricing.deactivate') || 'Désactiver') : (t('pricing.activate') || 'Activer')}
+                    aria-label={rule.isActive ? (t('aria.deactivate') || 'Désactiver') : (t('aria.activate') || 'Activer')}
                   >
                     {rule.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </Button>
@@ -919,9 +921,9 @@ export function PricingConfig() {
               {activePromotions.length}/{pricingConfig?.promotions?.length || 0} actives
             </Badge>
           </div>
-          <Button variant="outline" onClick={handleAddNewPromotion}>
+          <Button variant="outline" onClick={handleAddNewPromotion} aria-label={t('aria.addPromotion') || 'Ajouter une nouvelle promotion'} title={t('aria.addPromotion') || 'Ajouter une nouvelle promotion'}>
             <Plus className="w-4 h-4 mr-2" />
-            Ajouter une Promotion
+            {t('pricing.newPromotion') || 'Ajouter une Promotion'}
           </Button>
         </div>
         <div className="space-y-4">
@@ -996,7 +998,8 @@ export function PricingConfig() {
                     variant="ghost"
                     size="sm"
                     onClick={() => handleViewPromotion(promotion)}
-                    title="Voir les détails"
+                    title={t('aria.viewDetails') || 'Voir les détails'}
+                    aria-label={t('aria.viewDetails') || 'Voir les détails'}
                   >
                     <Eye className="w-4 h-4" />
                   </Button>
@@ -1004,7 +1007,8 @@ export function PricingConfig() {
                     variant="ghost"
                     size="sm"
                     onClick={() => handleTogglePromotionStatus(promotion)}
-                    title={promotion.isActive ? 'Désactiver' : 'Activer'}
+                    title={promotion.isActive ? (t('pricing.deactivate') || 'Désactiver') : (t('pricing.activate') || 'Activer')}
+                    aria-label={promotion.isActive ? (t('aria.deactivate') || 'Désactiver') : (t('aria.activate') || 'Activer')}
                   >
                     {promotion.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </Button>
@@ -1021,7 +1025,8 @@ export function PricingConfig() {
                     onClick={() => setIsDeletingPromotion(promotion.id!)}
                     className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     disabled={(promotion.usageCount || 0) > 0}
-                    title={(promotion.usageCount || 0) > 0 ? 'Impossible de supprimer une promotion utilisée' : 'Supprimer'}
+                    title={(promotion.usageCount || 0) > 0 ? (t('pricing.cannotDeleteUsed') || 'Impossible de supprimer une promotion utilisée') : (t('aria.delete') || 'Supprimer')}
+                    aria-label={(promotion.usageCount || 0) > 0 ? (t('pricing.cannotDeleteUsed') || 'Impossible de supprimer une promotion utilisée') : (t('aria.delete') || 'Supprimer')}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>

@@ -146,7 +146,7 @@ export function BikeManagement() {
           latitude: bike.latitude || 0,
           longitude: bike.longitude || 0,
           locationName: bike.locationName,
-          battery: bike.battery || 0,
+          battery: bike.batteryLevel || bike.battery || 0,
           gpsSignal: bike.gpsSignal,
           gsmSignal: bike.gsmSignal,
           speed: bike.speed,
@@ -184,7 +184,7 @@ export function BikeManagement() {
 
     } catch (error) {
       console.error('Erreur lors du chargement des vélos:', error);
-      toast.error('Erreur lors du chargement des vélos');
+      toast.error(t('bikes.error'));
     } finally {
       setLoading(false);
     }
@@ -330,14 +330,14 @@ export function BikeManagement() {
       if (formData.pricingPlanId === 'none') {
         toast.warning('Vélo créé sans plan tarifaire. Il ne sera pas visible dans l\'application client.');
       } else {
-        toast.success(`Vélo "${formData.code}" créé avec succès`);
+        toast.success(`${t('bikes.createSuccess')}: "${formData.code}"`);
       }
 
       setIsAddDialogOpen(false);
       await loadBikes();
     } catch (error) {
       console.error('Erreur lors de la création:', error);
-      toast.error('Erreur lors de la création du vélo');
+      toast.error(t('bikes.createError'));
     }
   };
 
@@ -367,14 +367,14 @@ export function BikeManagement() {
       if (formData.pricingPlanId === 'none') {
         toast.warning('Vélo modifié sans plan tarifaire. Il ne sera pas visible dans l\'application client.');
       } else {
-        toast.success(`Vélo "${formData.code}" modifié avec succès`);
+        toast.success(`${t('bikes.updateSuccess')}: "${formData.code}"`);
       }
 
       setIsEditDialogOpen(false);
       await loadBikes();
     } catch (error) {
       console.error('Erreur lors de la modification:', error);
-      toast.error('Erreur lors de la modification du vélo');
+      toast.error(t('bikes.updateError'));
     }
   };
 
@@ -383,12 +383,12 @@ export function BikeManagement() {
     
     try {
       await bikeService.deleteBike(selectedBike.id);
-      toast.success(`Vélo "${selectedBike.code}" supprimé avec succès`);
+      toast.success(`${t('bikes.deleteSuccess')}: "${selectedBike.code}"`);
       setIsDeleteDialogOpen(false);
       await loadBikes();
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
-      toast.error('Erreur lors de la suppression du vélo');
+      toast.error(t('bikes.deleteError'));
     }
   };
 
@@ -415,7 +415,7 @@ export function BikeManagement() {
       <div className="p-4 md:p-8 flex items-center justify-center">
         <div className="text-center">
           <Bike className="w-12 h-12 mx-auto mb-4 text-green-600 animate-pulse" />
-          <p className="text-gray-600">Chargement des vélos...</p>
+          <p className="text-gray-600">{t('bikes.loading')}</p>
         </div>
       </div>
     );
@@ -434,7 +434,7 @@ export function BikeManagement() {
             filename="velos"
             headers={Object.keys(exportData[0] || {})}
           />
-          <Button onClick={handleAddBike}>
+          <Button onClick={handleAddBike} aria-label={t('aria.add')}>
             <Plus className="w-4 h-4 mr-2" />
             {t('bikes.addNew')}
           </Button>
@@ -493,16 +493,17 @@ export function BikeManagement() {
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder="Rechercher par code, modèle ou localisation..."
+              placeholder={t('bikes.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
+              aria-label={t('aria.search')}
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full lg:w-[200px]">
               <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Filtrer par statut" />
+              <SelectValue placeholder={t('bikes.filterStatus')} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tous les statuts</SelectItem>
@@ -515,7 +516,7 @@ export function BikeManagement() {
           <Select value={locationFilter} onValueChange={setLocationFilter}>
             <SelectTrigger className="w-full lg:w-[200px]">
               <MapPin className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Filtrer par lieu" />
+              <SelectValue placeholder={t('bikes.filterLocation')} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tous les lieux</SelectItem>
@@ -617,11 +618,12 @@ export function BikeManagement() {
                 </p>
               </div>
 
-              {(bike.battery < 20 || (bike.gpsSignal !== undefined && bike.gpsSignal < 50) || bike.status === 'MAINTENANCE') && (
+              {((bike.battery < 20 && bike.battery > 0) || (bike.gpsSignal !== undefined && bike.gpsSignal < 50) || bike.status === 'MAINTENANCE') && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
                   <div className="text-xs text-red-700 space-y-1">
-                    {bike.battery < 20 && <p>Batterie critique</p>}
+                    {bike.battery < 20 && bike.battery > 0 && <p>Batterie faible ({bike.battery}%)</p>}
+                    {bike.battery === 0 && <p>Batterie vide (0%)</p>}
                     {bike.gpsSignal !== undefined && bike.gpsSignal < 50 && <p>Signal GPS faible</p>}
                     {bike.status === 'MAINTENANCE' && <p>Maintenance requise</p>}
                   </div>
@@ -636,6 +638,7 @@ export function BikeManagement() {
                   size="sm"
                   onClick={() => navigate(`/admin/bikes/${bike.id}`)}
                   className="w-full"
+                  aria-label={t('aria.viewDetails')}
                 >
                   {t('common.viewDetails')}
                 </Button>
@@ -645,6 +648,7 @@ export function BikeManagement() {
                     size="sm"
                     onClick={() => handleEditBike(bike)}
                     title={t('common.edit')}
+                    aria-label={t('aria.edit')}
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
@@ -653,6 +657,7 @@ export function BikeManagement() {
                     size="sm"
                     onClick={() => handleDeleteBike(bike)}
                     title={t('common.delete')}
+                    aria-label={t('aria.delete')}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -668,7 +673,7 @@ export function BikeManagement() {
           <div className="text-center text-gray-500">
             <Bike className="w-12 h-12 mx-auto mb-3 opacity-50" />
             <p>{t('common.noData')}</p>
-            <p className="text-sm mt-1">Essayez de modifier vos filtres de recherche</p>
+            <p className="text-sm mt-1">{t('bikes.noResults')}</p>
           </div>
         </Card>
       )}
@@ -783,11 +788,11 @@ export function BikeManagement() {
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} aria-label={t('aria.cancel')}>
               <X className="w-4 h-4 mr-2" />
               {t('common.cancel')}
             </Button>
-            <Button onClick={handleSaveNew}>
+            <Button onClick={handleSaveNew} aria-label={t('aria.save')}>
               <Check className="w-4 h-4 mr-2" />
               {t('common.save')}
             </Button>
@@ -910,7 +915,7 @@ export function BikeManagement() {
             <div>
               <Label>Équipements du vélo</Label>
               <p className="text-xs text-gray-500 mb-3">
-                Modifier les équipements de ce vélo
+                {t('bikes.editEquipment')}
               </p>
               <div className="grid grid-cols-2 gap-3">
                 {availableEquipment.map((equip) => (
@@ -932,11 +937,11 @@ export function BikeManagement() {
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} aria-label={t('aria.cancel')}>
               <X className="w-4 h-4 mr-2" />
               {t('common.cancel')}
             </Button>
-            <Button onClick={handleSaveEdit}>
+            <Button onClick={handleSaveEdit} aria-label={t('aria.save')}>
               <Check className="w-4 h-4 mr-2" />
               {t('common.save')}
             </Button>
@@ -950,15 +955,15 @@ export function BikeManagement() {
           <DialogHeader>
             <DialogTitle>{t('common.confirmDelete')}</DialogTitle>
             <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer le vélo "{selectedBike?.code}" ? Cette action est irréversible.
+              {t('bikes.deleteConfirm').replace('{code}', selectedBike?.code || '')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} aria-label={t('aria.cancel')}>
               <X className="w-4 h-4 mr-2" />
               {t('common.cancel')}
             </Button>
-            <Button variant="destructive" onClick={handleConfirmDelete}>
+            <Button variant="destructive" onClick={handleConfirmDelete} aria-label={t('aria.delete')}>
               <Trash2 className="w-4 h-4 mr-2" />
               {t('common.delete')}
             </Button>

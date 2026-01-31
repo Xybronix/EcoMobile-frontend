@@ -52,7 +52,7 @@ export function Dashboard() {
 
     } catch (error) {
       console.error('Error loading dashboard data:', error);
-      toast.error('Erreur de connexion au serveur');
+      toast.error(t('dashboard.error'));
     } finally {
       setIsLoading(false);
     }
@@ -75,7 +75,7 @@ export function Dashboard() {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <Loader2 className="w-12 h-12 text-green-600 mx-auto mb-4 animate-spin" />
-            <p className="text-gray-600 dark:text-gray-400">Chargement du tableau de bord...</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('dashboard.loading')}</p>
           </div>
         </div>
       </div>
@@ -90,7 +90,7 @@ export function Dashboard() {
       icon: Bike,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
-      change: language === 'fr' ? '+2 depuis hier' : '+2 since yesterday'
+      change: t('dashboard.changeSinceYesterday')
     },
     {
       title: t('dashboard.activeUsers'),
@@ -98,7 +98,7 @@ export function Dashboard() {
       icon: Users,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
-      change: language === 'fr' ? '+12 cette semaine' : '+12 this week'
+      change: t('dashboard.changeThisWeek')
     },
     {
       title: t('dashboard.todayRevenue'),
@@ -106,7 +106,7 @@ export function Dashboard() {
       icon: DollarSign,
       color: 'text-yellow-600',
       bgColor: 'bg-yellow-50',
-      change: language === 'fr' ? '+8% vs hier' : '+8% vs yesterday'
+      change: t('dashboard.changeVsYesterday')
     },
     {
       title: t('dashboard.pendingIncidents'),
@@ -114,7 +114,7 @@ export function Dashboard() {
       icon: AlertTriangle,
       color: 'text-red-600',
       bgColor: 'bg-red-50',
-      change: language === 'fr' ? 'Nécessite attention' : 'Requires attention'
+      change: t('dashboard.requiresAttention')
     }
   ];
 
@@ -149,12 +149,12 @@ export function Dashboard() {
       </div>
 
       {/* Map Section - S'assurer que la carte est visible et défilable */}
-      <Card className="p-6 flex-shrink-0">
+      <Card className="p-6">
         <div className="flex items-center gap-2 mb-4">
           <MapPin className="w-5 h-5 text-green-600" />
           <h2>{t('dashboard.realtimeMap')}</h2>
         </div>
-        <div className="relative overflow-hidden rounded-lg" style={{ height: '500px', width: '100%', minHeight: '500px', maxHeight: '500px' }}>
+        <div className="relative rounded-lg overflow-hidden" style={{ height: '600px', width: '100%', minHeight: '600px' }}>
           <BikeMap />
         </div>
       </Card>

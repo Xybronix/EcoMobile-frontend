@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Wallet, Search, DollarSign, Activity, Clock, CheckCircle, XCircle, Eye, Filter, Calendar, User, CreditCard } from 'lucide-react';
 import { Card } from '../../ui/card';
@@ -72,8 +72,13 @@ export function WalletManagement() {
   });
 
   const itemsPerPage = 20;
+  const isLoadingRef = useRef(false);
+  const statsLoadedRef = useRef(false);
 
   const loadTransactions = async () => {
+    if (isLoadingRef.current) return;
+    isLoadingRef.current = true;
+    
     try {
       setLoading(true);
       const response = await walletService.getAllTransactions(
@@ -96,16 +101,21 @@ export function WalletManagement() {
       setTotalPages(0);
     } finally {
       setLoading(false);
+      isLoadingRef.current = false;
     }
   };
 
   const loadGlobalStats = async () => {
+    if (statsLoadedRef.current) return;
+    statsLoadedRef.current = true;
+    
     try {
       const stats = await walletService.getGlobalWalletStats();
       setGlobalStats(stats);
     } catch (error) {
       console.error('Erreur lors du chargement des statistiques:', error);
       // Ne pas afficher d'erreur pour les stats, c'est pas critique
+      statsLoadedRef.current = false; // Réessayer au prochain chargement
     }
   };
 
@@ -129,15 +139,29 @@ export function WalletManagement() {
     }
   };
 
+  // Charger les transactions uniquement quand currentPage change
   useEffect(() => {
     loadTransactions();
-  }, [currentPage, filters]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage]);
 
+  // Charger les stats une seule fois au montage
   useEffect(() => {
-    if (hasPermission('wallet', 'read')) {
+    if (hasPermission('wallet', 'read') && !statsLoadedRef.current) {
       loadGlobalStats();
     }
-  }, [hasPermission]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Recharger quand les filtres changent (mais seulement si on est sur la page 1)
+  useEffect(() => {
+    if (currentPage === 1) {
+      loadTransactions();
+    } else {
+      setCurrentPage(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(filters)]);
 
   const handleSearch = (value: string) => {
     if (!hasPermission('wallet', 'read')) {
@@ -147,6 +171,19 @@ export function WalletManagement() {
     setSearchTerm(value);
     setCurrentPage(1);
   };
+
+  // Debounce pour la recherche
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchTerm !== undefined) {
+        setCurrentPage(1);
+        loadTransactions();
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm]);
 
   const handleFilterChange = (key: keyof TransactionFilters, value: string) => {
     const newFilters = { ...filters };
@@ -223,6 +260,7 @@ export function WalletManagement() {
         toast.success(`Transaction rejetée`);
       }
 
+      statsLoadedRef.current = false; // Réinitialiser pour recharger les stats
       await loadTransactions();
       await loadGlobalStats();
       closeActionDialog();
@@ -235,11 +273,12 @@ export function WalletManagement() {
 
   const getTransactionTypeBadge = (type: string) => {
     const typeMap: { [key: string]: { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' } } = {
-      'DEPOSIT': { label: 'Dépôt OM/MoMo', variant: 'default' },
-      'CASH_DEPOSIT': { label: 'Dépôt Espèces', variant: 'secondary' },
-      'WITHDRAWAL': { label: 'Retrait', variant: 'destructive' },
-      'RIDE_PAYMENT': { label: 'Paiement Course', variant: 'outline' },
-      'REFUND': { label: 'Remboursement', variant: 'default' }
+      'DEPOSIT': { label: t('wallet.mobileDeposit') || 'Dépôt OM/MoMo', variant: 'default' },
+      'CASH_DEPOSIT': { label: t('wallet.cashDeposit') || 'Dépôt Espèces', variant: 'secondary' },
+      'WITHDRAWAL': { label: t('wallet.withdrawal') || 'Retrait', variant: 'destructive' },
+      'RIDE_PAYMENT': { label: t('wallet.ridePayment') || 'Paiement Course', variant: 'outline' },
+      'REFUND': { label: t('wallet.refund') || 'Remboursement', variant: 'default' },
+      'DAMAGE_CHARGE': { label: t('wallet.damageCharge') || 'Charge de dégâts', variant: 'destructive' }
     };
 
     const config = typeMap[type] || { label: type, variant: 'outline' };
@@ -250,13 +289,13 @@ export function WalletManagement() {
     if (type === 'CASH_DEPOSIT') {
       switch (status) {
         case 'PENDING':
-          return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">En attente</Badge>;
+          return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">{t('wallet.status.pending') || 'En attente'}</Badge>;
         case 'COMPLETED':
-          return <Badge variant="default" className="bg-green-100 text-green-800">Validée</Badge>;
+          return <Badge variant="default" className="bg-green-100 text-green-800">{t('wallet.status.validated') || 'Validée'}</Badge>;
         case 'FAILED':
-          return <Badge variant="destructive">Rejetée</Badge>;
+          return <Badge variant="destructive">{t('wallet.status.rejected') || 'Rejetée'}</Badge>;
         case 'CANCELLED':
-          return <Badge variant="outline">Annulée</Badge>;
+          return <Badge variant="outline">{t('wallet.status.cancelled') || 'Annulée'}</Badge>;
         default:
           return <Badge variant="outline">{status}</Badge>;
       }
@@ -264,13 +303,13 @@ export function WalletManagement() {
 
     switch (status) {
       case 'COMPLETED':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Complétée</Badge>;
+        return <Badge variant="default" className="bg-green-100 text-green-800">{t('wallet.status.completed') || 'Complétée'}</Badge>;
       case 'PENDING':
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">En cours</Badge>;
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">{t('wallet.status.inProgress') || 'En cours'}</Badge>;
       case 'FAILED':
-        return <Badge variant="destructive">Échouée</Badge>;
+        return <Badge variant="destructive">{t('wallet.status.failed') || 'Échouée'}</Badge>;
       case 'CANCELLED':
-        return <Badge variant="outline">Annulée</Badge>;
+        return <Badge variant="outline">{t('wallet.status.cancelled') || 'Annulée'}</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -303,7 +342,7 @@ export function WalletManagement() {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Chargement des transactions...</p>
+            <p className="text-gray-600">{t('wallet.loading') || 'Chargement des transactions...'}</p>
           </div>
         </div>
       </div>
@@ -314,17 +353,19 @@ export function WalletManagement() {
     <div className="p-4 md:p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-green-600">Gestion des Portefeuilles</h1>
-          <p className="text-gray-600">Gestion des transactions et des demandes de recharge</p>
+          <h1 className="text-2xl font-bold text-green-600">{t('wallet.management') || 'Gestion des Portefeuilles'}</h1>
+          <p className="text-gray-600">{t('wallet.overview') || 'Gestion des transactions et des demandes de recharge'}</p>
         </div>
         <div className="flex items-center gap-3">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowFilters(!showFilters)}
+            aria-label={t('aria.toggleFilters') || 'Afficher/Masquer les filtres'}
+            title={t('aria.toggleFilters') || 'Afficher/Masquer les filtres'}
           >
             <Filter className="w-4 h-4 mr-2" />
-            Filtres
+            {t('common.filters') || 'Filtres'}
           </Button>
           <ExportButtons 
             data={exportData} 
@@ -340,7 +381,7 @@ export function WalletManagement() {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Solde Total</p>
+                <p className="text-sm text-gray-600">{t('wallet.totalBalance') || 'Solde Total'}</p>
                 <p className="text-2xl font-bold text-gray-900">{globalStats.totalBalance.toLocaleString()} FCFA</p>
               </div>
               <Wallet className="w-8 h-8 text-green-600" />
@@ -350,7 +391,7 @@ export function WalletManagement() {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Demandes en Attente</p>
+                <p className="text-sm text-gray-600">{t('wallet.pendingRequests') || 'Demandes en Attente'}</p>
                 <p className="text-2xl font-bold text-yellow-600">{globalStats.pendingCashRequests}</p>
               </div>
               <Clock className="w-8 h-8 text-yellow-600" />
@@ -360,7 +401,7 @@ export function WalletManagement() {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Transactions</p>
+                <p className="text-sm text-gray-600">{t('wallet.totalTransactions') || 'Total Transactions'}</p>
                 <p className="text-2xl font-bold text-gray-900">{globalStats.totalTransactions}</p>
               </div>
               <Activity className="w-8 h-8 text-blue-600" />
@@ -370,7 +411,7 @@ export function WalletManagement() {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Déposé</p>
+                <p className="text-sm text-gray-600">{t('wallet.totalDeposited') || 'Total Déposé'}</p>
                 <p className="text-2xl font-bold text-gray-900">{globalStats.totalDeposited.toLocaleString()} FCFA</p>
               </div>
               <DollarSign className="w-8 h-8 text-green-600" />
@@ -385,7 +426,8 @@ export function WalletManagement() {
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder="Rechercher par ID, email ou nom d'utilisateur..."
+              placeholder={t('wallet.searchPlaceholder') || "Rechercher par ID, email ou nom d'utilisateur..."}
+              aria-label={t('aria.search')}
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
               className="pl-10"
@@ -398,50 +440,54 @@ export function WalletManagement() {
               setFilters({});
               setCurrentPage(1);
             }}
-          >
-            Réinitialiser
-          </Button>
+            aria-label={t('aria.resetFilters') || 'Réinitialiser les filtres'}
+            title={t('aria.resetFilters') || 'Réinitialiser les filtres'}
+            >
+              {t('common.reset') || 'Réinitialiser'}
+            </Button>
         </div>
 
         {showFilters && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t">
             <Select value={filters.type || 'all'} onValueChange={(value) => handleFilterChange('type', value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Type de transaction" />
+                <SelectValue placeholder={t('wallet.transactionType') || 'Type de transaction'} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tous les types</SelectItem>
-                <SelectItem value="CASH_DEPOSIT">Dépôt Espèces</SelectItem>
-                <SelectItem value="DEPOSIT">Dépôt OM/MoMo</SelectItem>
-                <SelectItem value="WITHDRAWAL">Retrait</SelectItem>
-                <SelectItem value="RIDE_PAYMENT">Paiement Course</SelectItem>
-                <SelectItem value="REFUND">Remboursement</SelectItem>
+                <SelectItem value="all">{t('wallet.allTypes') || 'Tous les types'}</SelectItem>
+                <SelectItem value="CASH_DEPOSIT">{t('wallet.cashDeposit') || 'Dépôt Espèces'}</SelectItem>
+                <SelectItem value="DEPOSIT">{t('wallet.mobileDeposit') || 'Dépôt OM/MoMo'}</SelectItem>
+                <SelectItem value="WITHDRAWAL">{t('wallet.withdrawal') || 'Retrait'}</SelectItem>
+                <SelectItem value="RIDE_PAYMENT">{t('wallet.ridePayment') || 'Paiement Course'}</SelectItem>
+                <SelectItem value="REFUND">{t('wallet.refund') || 'Remboursement'}</SelectItem>
               </SelectContent>
             </Select>
 
             <Select value={filters.status || 'all'} onValueChange={(value) => handleFilterChange('status', value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Statut" />
+                <SelectValue placeholder={t('wallet.status') || 'Statut'} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tous les statuts</SelectItem>
-                <SelectItem value="PENDING">En attente</SelectItem>
-                <SelectItem value="COMPLETED">Complétée</SelectItem>
-                <SelectItem value="FAILED">Échouée</SelectItem>
-                <SelectItem value="CANCELLED">Annulée</SelectItem>
+                <SelectItem value="all">{t('wallet.allStatuses') || 'Tous les statuts'}</SelectItem>
+                <SelectItem value="PENDING">{t('wallet.status.pending') || 'En attente'}</SelectItem>
+                <SelectItem value="COMPLETED">{t('wallet.status.completed') || 'Complétée'}</SelectItem>
+                <SelectItem value="FAILED">{t('wallet.status.failed') || 'Échouée'}</SelectItem>
+                <SelectItem value="CANCELLED">{t('wallet.status.cancelled') || 'Annulée'}</SelectItem>
               </SelectContent>
             </Select>
 
             <Input
               type="date"
-              placeholder="Date de début"
+              placeholder={t('wallet.startDate') || 'Date de début'}
+              aria-label={t('wallet.startDate') || 'Date de début'}
               value={filters.dateFrom || ''}
               onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
             />
 
             <Input
               type="date"
-              placeholder="Date de fin"
+              placeholder={t('wallet.endDate') || 'Date de fin'}
+              aria-label={t('wallet.endDate') || 'Date de fin'}
               value={filters.dateTo || ''}
               onChange={(e) => handleFilterChange('dateTo', e.target.value)}
             />
@@ -455,13 +501,13 @@ export function WalletManagement() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Transaction</TableHead>
-                <TableHead>Utilisateur</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="text-right">Montant</TableHead>
-                <TableHead className="text-center">Statut</TableHead>
-                <TableHead className="text-center">Date</TableHead>
-                <TableHead className="text-center">Actions</TableHead>
+                <TableHead>{t('wallet.table.transaction') || 'Transaction'}</TableHead>
+                <TableHead>{t('wallet.table.user') || 'Utilisateur'}</TableHead>
+                <TableHead>{t('wallet.table.type') || 'Type'}</TableHead>
+                <TableHead className="text-right">{t('wallet.table.amount') || 'Montant'}</TableHead>
+                <TableHead className="text-center">{t('wallet.table.status') || 'Statut'}</TableHead>
+                <TableHead className="text-center">{t('wallet.table.date') || 'Date'}</TableHead>
+                <TableHead className="text-center">{t('wallet.table.actions') || 'Actions'}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -524,43 +570,37 @@ export function WalletManagement() {
                         size="sm"
                         onClick={() => loadTransactionDetails(transaction.id)}
                         disabled={detailsDialog.loading}
+                        aria-label={t('aria.viewTransactionDetails') || 'Voir les détails de la transaction'}
+                        title={t('aria.viewTransactionDetails') || 'Voir les détails de la transaction'}
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
                       
-                      <ProtectedAccess 
-                        mode="component" 
-                        resource="wallet" 
-                        action="update" 
-                        showFallback={false}
-                        fallback={
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => openActionDialog('validate', transaction)}
-                            disabled={actionLoading === transaction.id}
-                          >
-                            {actionLoading === transaction.id ? (
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                            ) : (
-                              <CheckCircle className="w-4 h-4" />
-                            )}
-                          </Button>
-                        }
-                      />
-
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => openActionDialog('validate', transaction)}
-                        disabled={actionLoading === transaction.id}
-                      >
-                        {actionLoading === transaction.id ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        ) : (
-                          <CheckCircle className="w-4 h-4" />
-                        )}
-                      </Button>
+                      {/* Ne pas afficher les boutons de validation pour les charges admin (DAMAGE_CHARGE déjà validées) */}
+                      {transaction.type !== 'DAMAGE_CHARGE' && (
+                        <ProtectedAccess 
+                          mode="component" 
+                          resource="wallet" 
+                          action="update" 
+                          showFallback={false}
+                          fallback={
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => openActionDialog('validate', transaction)}
+                              disabled={actionLoading === transaction.id}
+                              aria-label={t('aria.validateTransaction') || 'Valider la transaction'}
+                              title={t('aria.validateTransaction') || 'Valider la transaction'}
+                            >
+                              {actionLoading === transaction.id ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                              ) : (
+                                <CheckCircle className="w-4 h-4" />
+                              )}
+                            </Button>
+                          }
+                        />
+                      )}
 
                       <ProtectedAccess 
                         mode="component" 

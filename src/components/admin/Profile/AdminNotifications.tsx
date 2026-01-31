@@ -89,6 +89,7 @@ export function AdminNotifications() {
   const canManageNotifications = hasPermission('notifications', 'manage');
   const canCreateNotifications = hasPermission('notifications', 'create');
 
+  // Charger les données uniquement au montage du composant
   useEffect(() => {
     if (canReadNotifications) {
       loadNotifications();
@@ -97,7 +98,8 @@ export function AdminNotifications() {
       setLoading(false);
       toast.error('Vous n\'avez pas les permissions pour voir les notifications');
     }
-  }, [canReadNotifications]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Tableau vide pour charger uniquement au montage
 
   // Filtrage et recherche
   useEffect(() => {

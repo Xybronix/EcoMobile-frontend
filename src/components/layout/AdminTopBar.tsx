@@ -95,7 +95,7 @@ export function AdminTopBar({ onToggleSidebar, onToggleMobileMenu }: AdminTopBar
           <button
             onClick={onToggleMobileMenu}
             className="md:hidden flex p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            aria-label="Ouvrir le menu"
+            aria-label={t('aria.toggleMenu')}
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -104,7 +104,7 @@ export function AdminTopBar({ onToggleSidebar, onToggleMobileMenu }: AdminTopBar
           <button
             onClick={onToggleSidebar}
             className="hidden md:flex p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            aria-label="Réduire la sidebar"
+            aria-label={t('aria.toggleSidebar')}
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -116,6 +116,7 @@ export function AdminTopBar({ onToggleSidebar, onToggleMobileMenu }: AdminTopBar
             size="sm"
             onClick={handleBackToLanding}
             className="hover:bg-gray-100 dark:hover:bg-gray-700 hidden sm:flex items-center gap-2"
+            aria-label={t('aria.backToSite')}
           >
             <Home className="w-4 h-4" />
             <span className="hidden md:inline">{t('nav.backToSite')}</span>
@@ -129,6 +130,7 @@ export function AdminTopBar({ onToggleSidebar, onToggleMobileMenu }: AdminTopBar
               onClick={handleNavigateToNotifications}
               className="hover:bg-gray-100 dark:hover:bg-gray-700 relative"
               disabled={loadingNotifications}
+              aria-label={t('aria.notifications')}
             >
               <Bell className={`w-5 h-5 ${loadingNotifications ? 'animate-pulse' : ''}`} />
               {unreadNotificationsCount > 0 && (
@@ -141,7 +143,7 @@ export function AdminTopBar({ onToggleSidebar, onToggleMobileMenu }: AdminTopBar
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="hover:bg-gray-100 dark:hover:bg-gray-700 gap-1">
+              <Button variant="ghost" size="sm" className="hover:bg-gray-100 dark:hover:bg-gray-700 gap-1" aria-label={t('aria.language')}>
                 <Globe className="w-4 h-4" />
                 <span className="hidden sm:inline">{language === 'fr' ? 'FR' : 'EN'}</span>
                 <ChevronDown className="w-3 h-3" />
@@ -167,7 +169,7 @@ export function AdminTopBar({ onToggleSidebar, onToggleMobileMenu }: AdminTopBar
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="hover:bg-gray-100 dark:hover:bg-gray-700 gap-2">
+              <Button variant="ghost" size="sm" className="hover:bg-gray-100 dark:hover:bg-gray-700 gap-2" aria-label={t('aria.userMenu')}>
                 <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center">
                   <span className="text-white text-sm font-medium">
                     {user?.name?.charAt(0) || 'A'}
@@ -188,7 +190,7 @@ export function AdminTopBar({ onToggleSidebar, onToggleMobileMenu }: AdminTopBar
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleNavigateToProfile} className="cursor-pointer">
+              <DropdownMenuItem onClick={handleNavigateToProfile} className="cursor-pointer" aria-label={t('aria.profile')}>
                 <User className="w-4 h-4 mr-2" />
                 {t('common.myProfile')}
               </DropdownMenuItem>
@@ -198,13 +200,13 @@ export function AdminTopBar({ onToggleSidebar, onToggleMobileMenu }: AdminTopBar
                 action="read"
                 showFallback={false}
               >
-                <DropdownMenuItem onClick={handleNavigateToSettings} className="cursor-pointer">
+                <DropdownMenuItem onClick={handleNavigateToSettings} className="cursor-pointer" aria-label={t('aria.settings')}>
                   <Settings className="w-4 h-4 mr-2" />
                   {t('common.settings')}
                 </DropdownMenuItem>
               </ProtectedAccess>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 dark:text-red-400">
+              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 dark:text-red-400" aria-label={t('aria.logout')}>
                 <LogOut className="w-4 h-4 mr-2" />
                 {t('auth.logout')}
               </DropdownMenuItem>

@@ -93,6 +93,29 @@ export class IncidentService {
 
     return response.data;
   }
+
+  async updateAdminCharge(id: string, data: {
+    bikeId?: string;
+    amount: number;
+    reason: string;
+    description?: string;
+  }): Promise<any> {
+    const response = await apiClient.put(`/incidents/admin/charge/${id}`, data);
+    
+    if (!response.success || !response.data) {
+      throw new Error(response.error || 'Erreur lors de la modification de la charge');
+    }
+
+    return response.data;
+  }
+
+  async deleteAdminCharge(id: string): Promise<void> {
+    const response = await apiClient.delete(`/incidents/admin/charge/${id}`);
+    
+    if (!response.success) {
+      throw new Error(response.error || 'Erreur lors de la suppression de la charge');
+    }
+  }
 }
 
 export const incidentService = new IncidentService();

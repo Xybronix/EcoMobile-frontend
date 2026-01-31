@@ -72,7 +72,7 @@ class DocumentService {
 
   async getUserDocumentsStatus(userId: string): Promise<DocumentsStatus> {
     const response = await apiClient.get(`${this.baseUrl}/user/${userId}/status`);
-    return response.data?.data || response.data;
+    return response.data as DocumentsStatus;
   }
 
   async approveIdentityDocument(documentId: string) {

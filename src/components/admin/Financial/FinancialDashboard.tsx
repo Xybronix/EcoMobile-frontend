@@ -196,7 +196,7 @@ export function FinancialDashboard() {
       bgColor: 'bg-green-50'
     },
     {
-      title: 'Revenus de la Semaine',
+      title: t('financial.weekRevenue') || 'Revenus de la Semaine',
       value: `${data.stats.weekRevenue.toLocaleString()} FCFA`,
       change: '+12%',
       trend: 'up',
@@ -205,7 +205,7 @@ export function FinancialDashboard() {
       bgColor: 'bg-blue-50'
     },
     {
-      title: 'Revenus du Mois',
+      title: t('financial.monthRevenue') || 'Revenus du Mois',
       value: `${data.stats.monthRevenue.toLocaleString()} FCFA`,
       change: '+6%',
       trend: 'up',
@@ -214,7 +214,7 @@ export function FinancialDashboard() {
       bgColor: 'bg-purple-50'
     },
     {
-      title: 'Revenu Moyen/Trajet',
+      title: t('financial.avgRevenuePerTrip') || 'Revenu Moyen/Trajet',
       value: `${Math.round(data.stats.avgRevenuePerTrip)} FCFA`,
       change: '-2%',
       trend: 'down',
@@ -227,16 +227,16 @@ export function FinancialDashboard() {
   // Préparer les données pour l'export
   const exportData = data ? [
     ...data.charts.shortTerm.map((item: any) => ({
-      Période: item.period,
-      Revenus: item.revenue,
-      Dépenses: item.expenses,
-      Trajets: item.trips || '-'
+      [t('financial.period') || 'Période']: item.period,
+      [t('financial.revenue') || 'Revenus']: item.revenue,
+      [t('financial.expenses') || 'Dépenses']: item.expenses,
+      [t('financial.trips') || 'Trajets']: item.trips || '-'
     })),
     ...data.charts.longTerm.map((item: any) => ({
-      Période: item.period,
-      Revenus: item.revenue,
-      Dépenses: item.expenses,
-      Trajets: '-'
+      [t('financial.period') || 'Période']: item.period,
+      [t('financial.revenue') || 'Revenus']: item.revenue,
+      [t('financial.expenses') || 'Dépenses']: item.expenses,
+      [t('financial.trips') || 'Trajets']: '-'
     }))
   ] : [];
 
@@ -249,10 +249,10 @@ export function FinancialDashboard() {
       };
       
       await financialService.exportFinancialData(filters);
-      toast.success('Données exportées avec succès');
+      toast.success(t('financial.exportSuccess') || 'Données exportées avec succès');
     } catch (error) {
       console.error('Erreur lors de l\'export:', error);
-      toast.error('Erreur lors de l\'export des données');
+      toast.error(t('financial.exportError') || 'Erreur lors de l\'export des données');
     }
   };
 
@@ -262,7 +262,7 @@ export function FinancialDashboard() {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <Loader2 className="w-12 h-12 text-green-600 mx-auto mb-4 animate-spin" />
-            <p className="text-gray-600 dark:text-gray-400">Chargement des données financières...</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('financial.loading') || 'Chargement des données financières...'}</p>
           </div>
         </div>
       </div>
@@ -273,13 +273,13 @@ export function FinancialDashboard() {
     <div className="p-4 md:p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-green-600">Tableau de Bord Financier</h1>
-          <p className="text-gray-600">Analyses des revenus et performances financières</p>
+          <h1 className="text-green-600">{t('financial.dashboard') || 'Tableau de Bord Financier'}</h1>
+          <p className="text-gray-600">{t('financial.analysis') || 'Analyses des revenus et performances financières'}</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleExport} className="gap-2">
+          <Button onClick={handleExport} className="gap-2" aria-label={t('aria.exportData') || 'Exporter les données'} title={t('aria.exportData') || 'Exporter les données'}>
             <i className="w-4 h-4" />
-            Exporter
+            {t('financial.export') || 'Exporter'}
           </Button>
           <Button
             variant={showFilters ? "default" : "outline"}
@@ -295,7 +295,7 @@ export function FinancialDashboard() {
             className="gap-2"
           >
             <TrendingUp className="w-4 h-4" />
-            Actualiser
+            {t('common.refresh') || 'Actualiser'}
           </Button>
         </div>
       </div>

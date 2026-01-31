@@ -223,7 +223,7 @@ export function UserManagement() {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Chargement des utilisateurs...</p>
+            <p className="text-gray-600">{t('users.loading') || 'Chargement des utilisateurs...'}</p>
           </div>
         </div>
       </div>
@@ -249,7 +249,7 @@ export function UserManagement() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Utilisateurs</p>
+              <p className="text-sm text-gray-600">{t('users.total')}</p>
               <p className="text-2xl font-bold text-gray-900">{totalUsers || 0}</p>
             </div>
             <Users className="w-8 h-8 text-green-600" />
@@ -265,8 +265,8 @@ export function UserManagement() {
             <Card className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Solde Total</p>
-                  <p className="text-sm text-gray-500">Non accessible</p>
+                  <p className="text-sm text-gray-600">{t('users.totalBalance')}</p>
+                  <p className="text-sm text-gray-500">{t('users.notAccessible')}</p>
                 </div>
                 <DollarSign className="w-8 h-8 text-gray-400" />
               </div>
@@ -276,10 +276,10 @@ export function UserManagement() {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Solde Total</p>
+                <p className="text-sm text-gray-600">{t('users.totalBalance')}</p>
                 <p className="text-2xl font-bold text-gray-900">{totalBalance.toLocaleString()} FCFA</p>
                 <p className="text-xs text-gray-500">
-                  Caution: {totalDeposit.toLocaleString()} FCFA
+                  {t('users.deposit')}: {totalDeposit.toLocaleString()} FCFA
                 </p>
               </div>
               <DollarSign className="w-8 h-8 text-blue-600" />
@@ -296,8 +296,8 @@ export function UserManagement() {
             <Card className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Dépensé</p>
-                  <p className="text-sm text-gray-500">Non accessible</p>
+                  <p className="text-sm text-gray-600">{t('users.totalSpent')}</p>
+                  <p className="text-sm text-gray-500">{t('users.notAccessible')}</p>
                 </div>
                 <DollarSign className="w-8 h-8 text-gray-400" />
               </div>
@@ -307,7 +307,7 @@ export function UserManagement() {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Dépensé</p>
+                <p className="text-sm text-gray-600">{t('users.totalSpent')}</p>
                 <p className="text-2xl font-bold text-gray-900">{totalSpent.toLocaleString()} FCFA</p>
               </div>
               <DollarSign className="w-8 h-8 text-yellow-600" />
@@ -318,7 +318,7 @@ export function UserManagement() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Trajets</p>
+              <p className="text-sm text-gray-600">{t('users.totalTrips')}</p>
               <p className="text-2xl font-bold text-gray-900">{totalTrips || 0}</p>
             </div>
             <Activity className="w-8 h-8 text-purple-600" />
@@ -331,10 +331,11 @@ export function UserManagement() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
-            placeholder="Rechercher par nom, email ou téléphone..."
+            placeholder={t('users.searchPlaceholder') || 'Rechercher par nom, email ou téléphone...'}
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
             className="pl-10"
+            aria-label={t('aria.search')}
           />
         </div>
       </Card>
@@ -345,20 +346,20 @@ export function UserManagement() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Utilisateur</TableHead>
-                <TableHead>Contact</TableHead>
+                <TableHead>{t('users.table.user')}</TableHead>
+                <TableHead>{t('users.table.contact')}</TableHead>
                 <ProtectedAccess mode="component" resource="wallet" action="read" showFallback={false}>
-                  <TableHead className="text-right">Solde</TableHead>
+                  <TableHead className="text-right">{t('users.table.balance')}</TableHead>
                 </ProtectedAccess>
-                <TableHead className="text-right">Caution</TableHead>
-                <TableHead className="text-center">Trajets</TableHead>
+                <TableHead className="text-right">{t('users.table.deposit')}</TableHead>
+                <TableHead className="text-center">{t('users.table.trips')}</TableHead>
                 <ProtectedAccess mode="component" resource="wallet" action="read" showFallback={false}>
-                  <TableHead className="text-right">Dépenses</TableHead>
+                  <TableHead className="text-right">{t('users.table.expenses')}</TableHead>
                 </ProtectedAccess>
-                <TableHead className="text-center">Score</TableHead>
-                <TableHead className="text-center">Vérification</TableHead>
-                <TableHead className="text-center">Statut</TableHead>
-                <TableHead className="text-center">Actions</TableHead>
+                <TableHead className="text-center">{t('users.table.score')}</TableHead>
+                <TableHead className="text-center">{t('users.table.verification')}</TableHead>
+                <TableHead className="text-center">{t('users.table.status')}</TableHead>
+                <TableHead className="text-center">{t('users.table.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -410,19 +411,19 @@ export function UserManagement() {
                   <TableCell className="text-center">
                     <div className="flex items-center justify-center gap-1">
                       {user.emailVerified ? (
-                        <CheckCircle className="w-4 h-4 text-green-600" title="Email vérifié" />
+                        <CheckCircle className="w-4 h-4 text-green-600" title={t('users.emailVerified') || 'Email vérifié'} aria-label={t('users.emailVerified') || 'Email vérifié'} />
                       ) : (
-                        <AlertCircle className="w-4 h-4 text-yellow-600" title="Email non vérifié" />
+                        <AlertCircle className="w-4 h-4 text-yellow-600" title={t('users.emailNotVerified') || 'Email non vérifié'} aria-label={t('users.emailNotVerified') || 'Email non vérifié'} />
                       )}
                       {user.phoneVerified ? (
-                        <Phone className="w-4 h-4 text-green-600" title="Téléphone vérifié" />
+                        <Phone className="w-4 h-4 text-green-600" title={t('users.phoneVerified') || 'Téléphone vérifié'} aria-label={t('users.phoneVerified') || 'Téléphone vérifié'} />
                       ) : (
-                        <Phone className="w-4 h-4 text-gray-400" title="Téléphone non vérifié" />
+                        <Phone className="w-4 h-4 text-gray-400" title={t('users.phoneNotVerified') || 'Téléphone non vérifié'} aria-label={t('users.phoneNotVerified') || 'Téléphone non vérifié'} />
                       )}
                       {user.accountVerified ? (
-                        <Shield className="w-4 h-4 text-green-600" title="Compte validé" />
+                        <Shield className="w-4 h-4 text-green-600" title={t('users.accountVerified') || 'Compte validé'} aria-label={t('users.accountVerified') || 'Compte validé'} />
                       ) : (
-                        <Shield className="w-4 h-4 text-yellow-600" title="Compte en attente" />
+                        <Shield className="w-4 h-4 text-yellow-600" title={t('users.accountPending') || 'Compte en attente'} aria-label={t('users.accountPending') || 'Compte en attente'} />
                       )}
                     </div>
                   </TableCell>
@@ -435,6 +436,8 @@ export function UserManagement() {
                         variant="outline" 
                         size="sm"
                         onClick={() => handleViewDetails(user)}
+                        aria-label={t('aria.viewUserDetails') || `Voir les détails de ${user.name || 'l\'utilisateur'}`}
+                        title={t('aria.viewUserDetails') || `Voir les détails de ${user.name || 'l\'utilisateur'}`}
                       >
                         {t('common.viewDetails')}
                       </Button>
@@ -446,6 +449,8 @@ export function UserManagement() {
                             size="sm"
                             disabled={actionLoading === user.id}
                             onClick={() => openConfirmDialog('block', user)}
+                            aria-label={t('aria.blockUser') || `Bloquer ${user.name || 'l\'utilisateur'}`}
+                            title={t('users.block')}
                           >
                             {actionLoading === user.id ? (
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -459,6 +464,8 @@ export function UserManagement() {
                             size="sm"
                             disabled={actionLoading === user.id}
                             onClick={() => openConfirmDialog('unblock', user)}
+                            aria-label={t('aria.unblockUser') || `Débloquer ${user.name || 'l\'utilisateur'}`}
+                            title={t('users.unblock')}
                           >
                             {actionLoading === user.id ? (
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -494,8 +501,8 @@ export function UserManagement() {
         <Card className="p-12">
           <div className="text-center text-gray-500">
             <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>Aucun utilisateur trouvé</p>
-            <p className="text-sm mt-1">Essayez de modifier votre recherche</p>
+            <p>{t('users.noUsersFound') || 'Aucun utilisateur trouvé'}</p>
+            <p className="text-sm mt-1">{t('users.tryModifyingSearch') || 'Essayez de modifier votre recherche'}</p>
           </div>
         </Card>
       )}
@@ -524,13 +531,13 @@ export function UserManagement() {
                       </div>
                     ))
                 ) : (
-                  <p className="text-sm text-gray-500">Aucun client pour le moment</p>
+                  <p className="text-sm text-gray-500">{t('users.noClientsYet')}</p>
                 )}
               </div>
             </Card>
 
             <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Plus Actifs</h3>
+              <h3 className="text-lg font-semibold mb-4">{t('users.mostActive')}</h3>
               <div className="space-y-3">
                 {validUsers.length > 0 ? (
                   validUsers
@@ -544,18 +551,18 @@ export function UserManagement() {
                         </div>
                         <div className="flex-1">
                           <p className="text-sm font-medium">{user.name}</p>
-                          <p className="text-xs text-gray-500">{user.totalTrips || 0} trajets</p>
+                          <p className="text-xs text-gray-500">{t('users.tripsCount', { count: user.totalTrips || 0 })}</p>
                         </div>
                       </div>
                     ))
                 ) : (
-                  <p className="text-sm text-gray-500">Aucun membre actif pour le moment</p>
+                  <p className="text-sm text-gray-500">{t('users.noActiveMembersYet')}</p>
                 )}
               </div>
             </Card>
 
             <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Meilleurs Scores</h3>
+              <h3 className="text-lg font-semibold mb-4">{t('users.bestScores')}</h3>
               <div className="space-y-3">
                 {validUsers.length > 0 ? (
                   validUsers
@@ -576,7 +583,7 @@ export function UserManagement() {
                       </div>
                     ))
                 ) : (
-                  <p className="text-sm text-gray-500">Aucun score disponible pour le moment</p>
+                  <p className="text-sm text-gray-500">{t('users.noScoresYet')}</p>
                 )}
               </div>
             </Card>
@@ -589,12 +596,12 @@ export function UserManagement() {
         <DialogContent aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>
-              {confirmDialog.type === 'block' ? 'Bloquer l\'utilisateur' : 'Débloquer l\'utilisateur'}
+              {confirmDialog.type === 'block' ? (t('users.blockUser') || 'Bloquer l\'utilisateur') : (t('users.unblockUser') || 'Débloquer l\'utilisateur')}
             </DialogTitle>
             <DialogDescription>
               {confirmDialog.type === 'block' 
-                ? `Êtes-vous sûr de vouloir bloquer l'utilisateur "${confirmDialog.user?.name || 'cet utilisateur'}" ? Cette action empêchera l'utilisateur d'accéder au service.`
-                : `Êtes-vous sûr de vouloir débloquer l'utilisateur "${confirmDialog.user?.name || 'cet utilisateur'}" ? Cette action permettra à l'utilisateur d'accéder à nouveau au service.`
+                ? (t('users.blockUserConfirm', { name: confirmDialog.user?.name || 'cet utilisateur' }) || `Êtes-vous sûr de vouloir bloquer l'utilisateur "${confirmDialog.user?.name || 'cet utilisateur'}" ? Cette action empêchera l'utilisateur d'accéder au service.`)
+                : (t('users.unblockUserConfirm', { name: confirmDialog.user?.name || 'cet utilisateur' }) || `Êtes-vous sûr de vouloir débloquer l'utilisateur "${confirmDialog.user?.name || 'cet utilisateur'}" ? Cette action permettra à l'utilisateur d'accéder à nouveau au service.`)
               }
             </DialogDescription>
           </DialogHeader>
@@ -603,18 +610,20 @@ export function UserManagement() {
               variant="outline" 
               onClick={closeConfirmDialog}
               disabled={confirmDialog.loading}
+              aria-label={t('aria.cancel')}
             >
-              Annuler
+              {t('common.cancel')}
             </Button>
             <Button 
               variant={confirmDialog.type === 'block' ? 'destructive' : 'default'}
               onClick={handleConfirmAction}
               disabled={confirmDialog.loading}
+              aria-label={confirmDialog.type === 'block' ? (t('aria.confirmBlock') || 'Confirmer le blocage') : (t('aria.confirmUnblock') || 'Confirmer le déblocage')}
             >
               {confirmDialog.loading ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
               ) : null}
-              {confirmDialog.type === 'block' ? 'Bloquer' : 'Débloquer'}
+              {confirmDialog.type === 'block' ? (t('common.block') || 'Bloquer') : (t('common.unblock') || 'Débloquer')}
             </Button>
           </DialogFooter>
         </DialogContent>

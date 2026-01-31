@@ -197,7 +197,7 @@ export class UserService {
       throw new Error(response.error || 'Erreur lors de la validation du téléphone');
     }
 
-    return response.data.data;
+    return response.data as User;
   }
 
   async deleteUser(id: string): Promise<void> {
@@ -225,7 +225,7 @@ export class UserService {
       throw new Error(response.error || 'Erreur lors de l\'octroi du déblocage');
     }
 
-    return response.data;
+    return response.data as User;
   }
 
   async revokeDepositExemption(userId: string): Promise<User> {
@@ -235,7 +235,7 @@ export class UserService {
       throw new Error(response.error || 'Erreur lors de la révocation du déblocage');
     }
 
-    return response.data;
+    return response.data as User;
   }
 }
 

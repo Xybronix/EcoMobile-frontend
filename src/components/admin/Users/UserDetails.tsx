@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, DollarSign, Activity, Calendar, ArrowLeft, Ban, 
   CheckCircle, AlertCircle, Shield, MapPin, Bike, CreditCard,
-  TrendingUp, AlertTriangle, Lock, Unlock, History, FileText, MapPin as MapPinIcon, Download, X, Check } from 'lucide-react';
+  TrendingUp, AlertTriangle, Lock, Unlock, History, FileText, MapPin as MapPinIcon, Download, X, Check, Edit, Trash2 } from 'lucide-react';
 import { AdminChargeModal } from './AdminChargeModal';
 import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
@@ -40,6 +40,8 @@ export function UserDetails() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
   const [chargeModalOpen, setChargeModalOpen] = useState(false);
+  const [chargeEditModalOpen, setChargeEditModalOpen] = useState(false);
+  const [selectedChargeId, setSelectedChargeId] = useState<string | null>(null);
   const [depositExemptionModalOpen, setDepositExemptionModalOpen] = useState(false);
   const [depositExemptionDays, setDepositExemptionDays] = useState<number>(0);
   const [documentsStatus, setDocumentsStatus] = useState<DocumentsStatus | null>(null);
@@ -75,6 +77,9 @@ export function UserDetails() {
   const canViewWallet = hasPermission('wallet', 'read');
   const canViewRides = hasPermission('rides', 'read');
   const canViewIncidents = hasPermission('incidents', 'read');
+  const canManageIncidents = hasPermission('incidents', 'update') || hasPermission('incidents', 'delete');
+  const { user: currentUser } = usePermissions();
+  const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
 
   useEffect(() => {
     if (userId && canViewUser) {
@@ -261,7 +266,7 @@ export function UserDetails() {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Chargement des détails de l'utilisateur...</p>
+            <p className="text-gray-600">{t('users.loadingDetails') || 'Chargement des détails de l\'utilisateur...'}</p>
           </div>
         </div>
       </div>
@@ -297,7 +302,7 @@ export function UserDetails() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button onClick={handleBack} variant="ghost" size="icon">
+          <Button onClick={handleBack} variant="ghost" size="icon" aria-label={t('aria.back')} title={t('aria.back')}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="flex items-center gap-3">
@@ -309,7 +314,7 @@ export function UserDetails() {
               <p className="text-gray-600">{user.email || 'Email non disponible'}</p>
               <div className="flex items-center gap-2 mt-1">
                 <Badge className={getStatusColor(user.status)}>
-                  {user.status === 'active' ? 'Actif' : user.status === 'blocked' ? 'Bloqué' : 'En attente'}
+                  {user.status === 'active' ? (t('users.status.active') || 'Actif') : user.status === 'blocked' ? (t('users.status.blocked') || 'Bloqué') : (t('users.status.pending') || 'En attente')}
                 </Badge>
                 <Badge variant="outline">
                   {user.role || 'Utilisateur'}
@@ -324,6 +329,8 @@ export function UserDetails() {
               variant={user.status === 'active' ? 'destructive' : 'default'}
               onClick={() => openConfirmDialog(user.status === 'active' ? 'block' : 'unblock')}
               disabled={actionLoading}
+              aria-label={user.status === 'active' ? (t('aria.blockUser') || 'Bloquer l\'utilisateur') : (t('aria.unblockUser') || 'Débloquer l\'utilisateur')}
+              title={user.status === 'active' ? (t('users.block') || 'Bloquer') : (t('users.unblock') || 'Débloquer')}
             >
               {actionLoading ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -332,7 +339,7 @@ export function UserDetails() {
               ) : (
                 <CheckCircle className="w-4 h-4 mr-2" />
               )}
-              {user.status === 'active' ? 'Bloquer' : 'Débloquer'}
+              {user.status === 'active' ? (t('users.block') || 'Bloquer') : (t('users.unblock') || 'Débloquer')}
             </Button>
           </ProtectedAccess>
           <ProtectedAccess mode="component" resource="wallet" action="manage" fallback={null}>
@@ -340,17 +347,21 @@ export function UserDetails() {
               variant="outline"
               onClick={() => setChargeModalOpen(true)}
               className="border-orange-500 text-orange-600 hover:bg-orange-50"
+              aria-label={t('charges.assign') || 'Affecter une charge'}
+              title={t('charges.assign') || 'Affecter une charge'}
             >
               <AlertTriangle className="w-4 h-4 mr-2" />
-              Affecter une charge
+              {t('charges.assign') || 'Affecter une charge'}
             </Button>
             <Button
               variant="outline"
               onClick={() => setDepositExemptionModalOpen(true)}
               className="border-blue-500 text-blue-600 hover:bg-blue-50"
+              aria-label={t('users.depositExemption') || 'Déblocage sans caution'}
+              title={t('users.depositExemption') || 'Déblocage sans caution'}
             >
               <Unlock className="w-4 h-4 mr-2" />
-              Déblocage sans caution
+              {t('users.depositExemption') || 'Déblocage sans caution'}
             </Button>
           </ProtectedAccess>
         </div>
@@ -749,51 +760,102 @@ export function UserDetails() {
                       <th className="text-left p-4 text-sm font-medium text-gray-600">Statut</th>
                       <th className="text-right p-4 text-sm font-medium text-gray-600">Remboursement</th>
                       <th className="text-left p-4 text-sm font-medium text-gray-600">Admin</th>
+                      {canManageIncidents && (
+                        <th className="text-left p-4 text-sm font-medium text-gray-600">Actions</th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
-                    {incidents.map((incident) => (
-                      <tr key={incident.id} className="border-b hover:bg-gray-50 transition-colors">
-                        <td className="p-4 text-sm text-gray-900">
-                          {formatDate(incident.createdAt)}
-                        </td>
-                        <td className="p-4">
-                          <Badge variant="outline">
-                            {incident.type === 'technical' ? 'Technique' :
-                             incident.type === 'accident' ? 'Accident' :
-                             incident.type === 'damaged' ? 'Endommagé' :
-                             incident.type === 'payment' ? 'Paiement' :
-                             incident.type === 'theft' ? 'Vol' : incident.type}
-                          </Badge>
-                        </td>
-                        <td className="p-4 text-sm text-gray-900">
-                          {incident.description}
-                        </td>
-                        <td className="p-4 text-sm text-gray-900">
-                          {incident.bikeName || incident.bike?.code || 'N/A'}
-                        </td>
-                        <td className="p-4">
-                          <Badge 
-                            className={
-                              incident.status === 'RESOLVED' ? 'bg-green-100 text-green-800' :
-                              incident.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
-                              incident.status === 'CLOSED' ? 'bg-red-100 text-red-800' :
-                              'bg-yellow-100 text-yellow-800'
-                            }
-                          >
-                            {incident.status === 'OPEN' ? 'En attente' :
-                             incident.status === 'IN_PROGRESS' ? 'En traitement' :
-                             incident.status === 'RESOLVED' ? 'Résolu' : 'Fermé'}
-                          </Badge>
-                        </td>
-                        <td className="p-4 text-sm text-gray-900 text-right font-medium">
-                          {incident.refundAmount ? formatCurrency(incident.refundAmount) : '-'}
-                        </td>
-                        <td className="p-4 text-sm text-gray-900">
-                          {incident.resolvedBy || incident.adminNote ? 'Oui' : 'Non'}
-                        </td>
-                      </tr>
-                    ))}
+                    {incidents.map((incident) => {
+                      const isAdminCharge = incident.type === 'admin_charge';
+                      const canEditCharge = isAdminCharge && canManageIncidents && (isSuperAdmin || incident.resolvedBy === currentUser?.id);
+                      const canDeleteCharge = isAdminCharge && canManageIncidents && (isSuperAdmin || incident.resolvedBy === currentUser?.id);
+                      
+                      return (
+                        <tr key={incident.id} className="border-b hover:bg-gray-50 transition-colors">
+                          <td className="p-4 text-sm text-gray-900">
+                            {formatDate(incident.createdAt)}
+                          </td>
+                          <td className="p-4">
+                            <Badge variant="outline">
+                              {incident.type === 'admin_charge' ? 'Charge admin' :
+                               incident.type === 'technical' ? 'Technique' :
+                               incident.type === 'accident' ? 'Accident' :
+                               incident.type === 'damaged' ? 'Endommagé' :
+                               incident.type === 'payment' ? 'Paiement' :
+                               incident.type === 'theft' ? 'Vol' : incident.type}
+                            </Badge>
+                          </td>
+                          <td className="p-4 text-sm text-gray-900">
+                            {incident.description}
+                          </td>
+                          <td className="p-4 text-sm text-gray-900">
+                            {incident.bikeName || incident.bike?.code || 'N/A'}
+                          </td>
+                          <td className="p-4">
+                            <Badge 
+                              className={
+                                incident.status === 'RESOLVED' ? 'bg-green-100 text-green-800' :
+                                incident.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
+                                incident.status === 'CLOSED' ? 'bg-red-100 text-red-800' :
+                                'bg-yellow-100 text-yellow-800'
+                              }
+                            >
+                              {incident.status === 'OPEN' ? 'En attente' :
+                               incident.status === 'IN_PROGRESS' ? 'En traitement' :
+                               incident.status === 'RESOLVED' ? 'Résolu' : 'Fermé'}
+                            </Badge>
+                          </td>
+                          <td className="p-4 text-sm text-gray-900 text-right font-medium">
+                            {incident.refundAmount ? formatCurrency(incident.refundAmount) : '-'}
+                          </td>
+                          <td className="p-4 text-sm text-gray-900">
+                            {incident.resolvedBy || incident.adminNote ? 'Oui' : 'Non'}
+                          </td>
+                          {canManageIncidents && (
+                            <td className="p-4">
+                              <div className="flex items-center gap-2">
+                                {canEditCharge && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedChargeId(incident.id);
+                                      setChargeEditModalOpen(true);
+                                    }}
+                                    className="h-8 w-8 p-0"
+                                    aria-label="Modifier la charge"
+                                  >
+                                    <Edit className="w-4 h-4 text-blue-600" />
+                                  </Button>
+                                )}
+                                {canDeleteCharge && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={async () => {
+                                      if (window.confirm('Êtes-vous sûr de vouloir supprimer cette charge ? Le montant sera remboursé à l\'utilisateur.')) {
+                                        try {
+                                          await incidentService.deleteAdminCharge(incident.id);
+                                          toast.success('Charge supprimée avec succès');
+                                          loadUserData();
+                                        } catch (error: any) {
+                                          toast.error(error.message || 'Erreur lors de la suppression de la charge');
+                                        }
+                                      }
+                                    }}
+                                    className="h-8 w-8 p-0"
+                                    aria-label="Supprimer la charge"
+                                  >
+                                    <Trash2 className="w-4 h-4 text-red-600" />
+                                  </Button>
+                                )}
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1410,6 +1472,17 @@ export function UserDetails() {
         onClose={() => setChargeModalOpen(false)}
         onSuccess={loadUserData}
         preselectedUserId={userId || undefined}
+      />
+
+      <AdminChargeModal
+        open={chargeEditModalOpen}
+        onClose={() => {
+          setChargeEditModalOpen(false);
+          setSelectedChargeId(null);
+        }}
+        onSuccess={loadUserData}
+        chargeId={selectedChargeId || undefined}
+        isEditMode={true}
       />
 
       {/* Deposit Exemption Dialog */}
