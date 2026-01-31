@@ -72,13 +72,13 @@
             "tailwind-merge": "*",
             "uuid": "*",
             "vaul": "^1.1.2",
-            "vite": "^6.4.1"
+            "vite": "^6.4.1",
+            "@vitejs/plugin-react-swc": "^3.10.2"
       },
       "devDependencies": {
             "@types/leaflet": "^1.9.21",
             "@types/node": "^20.19.27",
             "@types/react": "^19.2.2",
-            "@vitejs/plugin-react-swc": "^3.10.2",
             "gh-pages": "^6.3.0",
             "patch-package": "^8.0.1",
             "postinstall-postinstall": "^2.1.0"
