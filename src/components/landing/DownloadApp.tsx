@@ -1,5 +1,4 @@
 import React from 'react';
-import { Smartphone } from 'lucide-react';
 import { useI18n } from '../../lib/i18n';
 import { useCompanyInfo } from '../../hooks/useCompanyInfo';
 import { Button } from '../ui/button';
@@ -18,41 +17,65 @@ export function DownloadApp({ onNavigateToMobile }: DownloadAppProps) {
   const appStoreBadgeUrl = "https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg";
   const googlePlayBadgeUrl = "https://play.google.com/intl/en_us/badges/static/images/badges/fr_badge_web_generic.png";
 
-  // Récupérer les variables d'environnement
-  const downloadUrl = (import.meta as any).env?.VITE_APP_DOWNLOAD_URL || '';
-  const appName = (import.meta as any).env?.VITE_APP_NAME || 'EcoMobile';
+  const downloadUrl = (import.meta as any).env.VITE_APP_DOWNLOAD_URL || '';
+  const appName = (import.meta as any).env.VITE_APP_NAME || 'FreeBike';
 
-  // Fonction pour télécharger l'APK avec le bon nom
   const handleDownloadAPK = async () => {
     if (!downloadUrl) {
-      console.error('VITE_APP_DOWNLOAD_URL n\'est pas défini');
+      alert('Lien de téléchargement non configuré');
       return;
     }
 
     try {
-      // Télécharger le fichier
-      const response = await fetch(downloadUrl);
+      const response = await fetch(downloadUrl, {
+        method: 'GET',
+        mode: 'cors',
+        cache: 'no-cache',
+      });
+
       if (!response.ok) {
-        throw new Error('Erreur lors du téléchargement');
+        throw new Error(`Erreur HTTP: ${response.status} ${response.statusText}`);
       }
 
-      // Récupérer le blob
+      const contentType = response.headers.get('content-type') || '';
+
       const blob = await response.blob();
 
-      // Créer un lien de téléchargement avec le nom personnalisé
+      const cleanAppName = appName.replace(/[^a-zA-Z0-9-_]/g, '_');
+      const fileName = `${cleanAppName}.apk`;
+
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
+      
       link.href = url;
-      link.download = `${appName}.apk`; // Nom personnalisé depuis .env
+      link.download = fileName;
+      link.style.display = 'none';
+      
       document.body.appendChild(link);
+      
       link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }, 100);
+
     } catch (error) {
-      console.error('Erreur lors du téléchargement:', error);
-      // Fallback : ouvrir le lien directement
-      if (downloadUrl) {
-        window.open(downloadUrl, '_blank');
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `${appName.replace(/[^a-zA-Z0-9-_]/g, '_')}.apk`;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        setTimeout(() => {
+          window.open(downloadUrl, '_blank');
+        }, 100);
+      } else {
+        alert(`Erreur lors du téléchargement: ${error instanceof Error ? error.message : 'Erreur inconnue'}\n\nVeuillez réessayer ou contacter le support.`);
       }
     }
   };

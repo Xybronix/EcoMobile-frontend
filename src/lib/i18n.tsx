@@ -33,7 +33,7 @@ const translations: Translations = {
   'nav.settings': { fr: 'Paramètres', en: 'Settings' },
   
   // Dashboard
-  'dashboard.title': { fr: 'Dashboard EcoMobile', en: 'EcoMobile Dashboard' },
+  'dashboard.title': { fr: 'Dashboard FreeBike', en: 'FreeBike Dashboard' },
   'dashboard.overview': { fr: 'Vue d\'ensemble de la flotte et des opérations', en: 'Fleet and operations overview' },
   'dashboard.availableBikes': { fr: 'Vélos Disponibles', en: 'Available Bikes' },
   'dashboard.activeUsers': { fr: 'Utilisateurs Actifs', en: 'Active Users' },
@@ -491,7 +491,7 @@ const translations: Translations = {
   'nav.giveReview': { fr: 'Donner un avis', en: 'Give a review' },
   
   // Hero Section
-  'hero.title': { fr: 'Déplacez-vous librement avec EcoMobile', en: 'Move freely with EcoMobile' },
+  'hero.title': { fr: 'Déplacez-vous librement avec FreeBike', en: 'Move freely with FreeBike' },
   'hero.subtitle': { fr: 'Location de vélos électriques à Douala - Simple, rapide et écologique', en: 'Electric bike rental in Douala - Simple, fast and eco-friendly' },
   'hero.downloadNow': { fr: 'Télécharger maintenant', en: 'Download now' },
   'hero.learnMore': { fr: 'En savoir plus', en: 'Learn more' },
@@ -500,7 +500,7 @@ const translations: Translations = {
   'hero.stats.available': { fr: 'Disponible', en: 'Available' },
   
   // Features Section
-  'features.title': { fr: 'Pourquoi choisir EcoMobile ?', en: 'Why choose EcoMobile?' },
+  'features.title': { fr: 'Pourquoi choisir FreeBike ?', en: 'Why choose FreeBike?' },
   'features.subtitle': { fr: 'Une solution de mobilité moderne adaptée à vos besoins quotidiens', en: 'A modern mobility solution adapted to your daily needs' },
   'features.gps.title': { fr: 'Géolocalisation GPS', en: 'GPS Tracking' },
   'features.gps.description': { fr: 'Trouvez et localisez les vélos disponibles en temps réel sur la carte', en: 'Find and locate available bikes in real-time on the map' },
@@ -519,7 +519,7 @@ const translations: Translations = {
   'howItWorks.title': { fr: 'Comment ça marche ?', en: 'How does it work?' },
   'howItWorks.subtitle': { fr: 'Commencez à rouler en 4 étapes simples', en: 'Start riding in 4 simple steps' },
   'howItWorks.step1.title': { fr: 'Téléchargez l\'app', en: 'Download the app' },
-  'howItWorks.step1.description': { fr: 'Installez EcoMobile depuis l\'App Store ou Google Play', en: 'Install EcoMobile from the App Store or Google Play' },
+  'howItWorks.step1.description': { fr: 'Installez FreeBike depuis l\'App Store ou Google Play', en: 'Install FreeBike from the App Store or Google Play' },
   'howItWorks.step2.title': { fr: 'Trouvez un vélo', en: 'Find a bike' },
   'howItWorks.step2.description': { fr: 'Localisez le vélo le plus proche sur la carte', en: 'Locate the nearest bike on the map' },
   'howItWorks.step3.title': { fr: 'Scannez le QR code', en: 'Scan the QR code' },
@@ -559,11 +559,11 @@ const translations: Translations = {
   
   // Testimonials Section
   'testimonials.title': { fr: 'Ce que disent nos utilisateurs', en: 'What our users say' },
-  'testimonials.subtitle': { fr: 'Des milliers de personnes utilisent déjà EcoMobile au quotidien', en: 'Thousands of people already use EcoMobile daily' },
+  'testimonials.subtitle': { fr: 'Des milliers de personnes utilisent déjà FreeBike au quotidien', en: 'Thousands of people already use FreeBike daily' },
   'testimonials.users.0.role': { fr: 'Étudiante', en: 'Student' },
-  'testimonials.users.0.content': { fr: 'EcoMobile a transformé mes déplacements quotidiens. C\'est rapide, économique et écologique. Je recommande vivement !', en: 'EcoMobile has transformed my daily commute. It\'s fast, economical and eco-friendly. I highly recommend it!' },
+  'testimonials.users.0.content': { fr: 'FreeBike a transformé mes déplacements quotidiens. C\'est rapide, économique et écologique. Je recommande vivement !', en: 'FreeBike has transformed my daily commute. It\'s fast, economical and eco-friendly. I highly recommend it!' },
   'testimonials.users.1.role': { fr: 'Entrepreneur', en: 'Entrepreneur' },
-  'testimonials.users.1.content': { fr: 'Plus besoin de chercher un parking ou de rester coincé dans les embouteillages. EcoMobile est la solution parfaite pour se déplacer à Douala.', en: 'No more searching for parking or being stuck in traffic. EcoMobile is the perfect solution to get around Douala.' },
+  'testimonials.users.1.content': { fr: 'Plus besoin de chercher un parking ou de rester coincé dans les embouteillages. FreeBike est la solution parfaite pour se déplacer à Douala.', en: 'No more searching for parking or being stuck in traffic. FreeBike is the perfect solution to get around Douala.' },
   'testimonials.users.2.role': { fr: 'Professionnelle', en: 'Professional' },
   'testimonials.users.2.content': { fr: 'L\'application est très intuitive et le paiement mobile est super pratique. Je l\'utilise tous les jours pour aller au travail.', en: 'The app is very intuitive and mobile payment is super convenient. I use it every day to go to work.' },
   
@@ -574,7 +574,7 @@ const translations: Translations = {
   'download.features.1': { fr: 'Réservation instantanée par QR code', en: 'Instant booking via QR code' },
   'download.features.2': { fr: 'Paiement sécurisé Mobile Money', en: 'Secure Mobile Money payment' },
   'download.availableOn': { fr: 'Disponible sur', en: 'Available on' },
-  'download.qrInfo': { fr: 'Scannez un vélo EcoMobile pour télécharger l\'application automatiquement', en: 'Scan a EcoMobile bike to download the app automatically' },
+  'download.qrInfo': { fr: 'Scannez un vélo FreeBike pour télécharger l\'application automatiquement', en: 'Scan a FreeBike bike to download the app automatically' },
   'download.badge': { fr: 'Nouveau !', en: 'New!' },
   
   // Footer
