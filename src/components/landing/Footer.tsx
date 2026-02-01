@@ -28,7 +28,7 @@ export function Footer() {
 
   const displayName = isLoading ? 'FreeBike' : (companyName || 'FreeBike');
   const displayEmail = email || `info@${displayName.toLowerCase()}.cm`;
-  const displayPhone = phone || '+237 6XX XX XX XX';
+  const displayPhone = phone || '+237 690 60 11 86';
   const displayLocation = address ? `${address}, ${city}, ${country}` : `${city || 'Douala'}, ${country || 'Cameroun'}`;
   const displayTagline = description || t('footer.tagline');
 
