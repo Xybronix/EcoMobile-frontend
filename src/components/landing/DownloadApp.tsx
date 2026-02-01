@@ -18,6 +18,45 @@ export function DownloadApp({ onNavigateToMobile }: DownloadAppProps) {
   const appStoreBadgeUrl = "https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg";
   const googlePlayBadgeUrl = "https://play.google.com/intl/en_us/badges/static/images/badges/fr_badge_web_generic.png";
 
+  // Récupérer les variables d'environnement
+  const downloadUrl = (import.meta as any).env?.VITE_APP_DOWNLOAD_URL || '';
+  const appName = (import.meta as any).env?.VITE_APP_NAME || 'EcoMobile';
+
+  // Fonction pour télécharger l'APK avec le bon nom
+  const handleDownloadAPK = async () => {
+    if (!downloadUrl) {
+      console.error('VITE_APP_DOWNLOAD_URL n\'est pas défini');
+      return;
+    }
+
+    try {
+      // Télécharger le fichier
+      const response = await fetch(downloadUrl);
+      if (!response.ok) {
+        throw new Error('Erreur lors du téléchargement');
+      }
+
+      // Récupérer le blob
+      const blob = await response.blob();
+
+      // Créer un lien de téléchargement avec le nom personnalisé
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${appName}.apk`; // Nom personnalisé depuis .env
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Erreur lors du téléchargement:', error);
+      // Fallback : ouvrir le lien directement
+      if (downloadUrl) {
+        window.open(downloadUrl, '_blank');
+      }
+    }
+  };
+
   return (
     <section id="download" className="py-20 bg-gradient-to-br from-green-600 to-green-700 relative overflow-hidden">
       {/* Background Pattern */}
@@ -60,31 +99,48 @@ export function DownloadApp({ onNavigateToMobile }: DownloadAppProps) {
 
             {/* Download Buttons */}
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button
-                size="lg"
-                onClick={onNavigateToMobile}
-                className="bg-black hover:bg-gray-900 bg-transparent hover:bg-transparent text-white px-6 py-6"
-                aria-label="Download on the App Store"
-              >
-                <img 
-                  src={appStoreBadgeUrl}
-                  alt="Download on the App Store"
-                  className="h-12"
-                />
-              </Button>
-              
-              <Button
-                size="lg"
-                onClick={onNavigateToMobile}
-                className="bg-black hover:bg-gray-900 bg-transparent hover:bg-transparent text-white px-6 py-6"
-                aria-label="Get it on Google Play"
-              >
-                <img 
-                  src={googlePlayBadgeUrl}
-                  alt="Get it on Google Play"
-                  className="h-16"
-                />
-              </Button>
+              {downloadUrl ? (
+                <Button
+                  size="lg"
+                  onClick={handleDownloadAPK}
+                  className="bg-black hover:bg-gray-900 bg-transparent hover:bg-transparent text-white px-6 py-6"
+                  aria-label="Download APK"
+                >
+                  <img 
+                    src={googlePlayBadgeUrl}
+                    alt="Get it on Google Play"
+                    className="h-16"
+                  />
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    size="lg"
+                    onClick={onNavigateToMobile}
+                    className="bg-black hover:bg-gray-900 bg-transparent hover:bg-transparent text-white px-6 py-6"
+                    aria-label="Download on the App Store"
+                  >
+                    <img 
+                      src={appStoreBadgeUrl}
+                      alt="Download on the App Store"
+                      className="h-12"
+                    />
+                  </Button>
+                  
+                  <Button
+                    size="lg"
+                    onClick={onNavigateToMobile}
+                    className="bg-black hover:bg-gray-900 bg-transparent hover:bg-transparent text-white px-6 py-6"
+                    aria-label="Get it on Google Play"
+                  >
+                    <img 
+                      src={googlePlayBadgeUrl}
+                      alt="Get it on Google Play"
+                      className="h-16"
+                    />
+                  </Button>
+                </>
+              )}
             </div>
 
             {/* QR Code Info */}

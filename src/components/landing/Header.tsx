@@ -93,12 +93,14 @@ export function Header() {
             </div>
             
             <Button onClick={handleNavigateToReviews} variant="outline" className="text-sm xl:text-base">
-              Donner un avis
+              {t('nav.giveReview')}
             </Button>
             
+            {/*}
             <Button onClick={handleNavigateToAdmin} variant="outline" className="text-sm xl:text-base">
               {t('nav.admin')}
             </Button>
+            */}
             
             {
               /*
@@ -169,7 +171,7 @@ export function Header() {
               </div>
               
               <Button onClick={handleNavigateToReviews} variant="outline" className="w-full">
-                Donner un avis
+                {t('nav.giveReview')}
               </Button>
               
               <Button onClick={handleNavigateToAdmin} variant="outline" className="w-full">

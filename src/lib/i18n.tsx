@@ -488,6 +488,7 @@ const translations: Translations = {
   'nav.admin': { fr: 'Admin', en: 'Admin' },
   'nav.downloadApp': { fr: 'Télécharger l\'App', en: 'Download App' },
   'nav.backToSite': { fr: 'Retour au site', en: 'Back to site' },
+  'nav.giveReview': { fr: 'Donner un avis', en: 'Give a review' },
   
   // Hero Section
   'hero.title': { fr: 'Déplacez-vous librement avec EcoMobile', en: 'Move freely with EcoMobile' },
@@ -721,6 +722,29 @@ const translations: Translations = {
   'financial.monthlyDataRange': { fr: 'Données mensuelles ({start} - {end})', en: 'Monthly data ({start} - {end})' },
   'financial.dailyEvolution': { fr: 'Évolution journalière ({start} - {end})', en: 'Daily evolution ({start} - {end})' },
   'financial.monthlyEvolution': { fr: 'Évolution mensuelle ({start} - {end})', en: 'Monthly evolution ({start} - {end})' },
+  
+  // Reviews Page
+  'reviews.title': { fr: 'Partagez votre expérience', en: 'Share your experience' },
+  'reviews.subtitle': { fr: 'Votre avis nous aide à améliorer notre service et aide les autres utilisateurs.', en: 'Your review helps us improve our service and helps other users.' },
+  'reviews.photo': { fr: 'Photo (optionnelle)', en: 'Photo (optional)' },
+  'reviews.choosePhoto': { fr: 'Choisir une photo', en: 'Choose a photo' },
+  'reviews.firstName': { fr: 'Prénom *', en: 'First name *' },
+  'reviews.lastName': { fr: 'Nom *', en: 'Last name *' },
+  'reviews.socialStatus': { fr: 'Statut social *', en: 'Social status *' },
+  'reviews.socialStatusPlaceholder': { fr: 'Ex: Étudiant, Ingénieur, Médecin, etc.', en: 'Ex: Student, Engineer, Doctor, etc.' },
+  'reviews.rating': { fr: 'Nombre d\'étoiles *', en: 'Number of stars *' },
+  'reviews.comment': { fr: 'Votre avis *', en: 'Your review *' },
+  'reviews.commentPlaceholder': { fr: 'Partagez votre expérience avec notre service...', en: 'Share your experience with our service...' },
+  'reviews.connectedAs': { fr: '✓ Connecté en tant que {firstName} {lastName}', en: '✓ Connected as {firstName} {lastName}' },
+  'reviews.submit': { fr: 'Soumettre mon avis', en: 'Submit my review' },
+  'reviews.submitting': { fr: 'Envoi en cours...', en: 'Submitting...' },
+  'reviews.allFieldsRequired': { fr: 'Tous les champs sont obligatoires', en: 'All fields are required' },
+  'reviews.imageTooLarge': { fr: 'L\'image ne doit pas dépasser 5MB', en: 'Image must not exceed 5MB' },
+  'reviews.success': { fr: 'Votre avis a été soumis avec succès ! Il sera examiné avant publication.', en: 'Your review has been submitted successfully! It will be reviewed before publication.' },
+  'reviews.error': { fr: 'Erreur lors de la soumission', en: 'Error submitting review' },
+  'reviews.thankYou': { fr: 'Merci pour votre avis !', en: 'Thank you for your review!' },
+  'reviews.thankYouMessage': { fr: 'Votre avis a été soumis avec succès. Il sera examiné par notre équipe avant d\'être publié.', en: 'Your review has been submitted successfully. It will be reviewed by our team before being published.' },
+  'reviews.close': { fr: 'Fermer', en: 'Close' },
 };
 
 interface I18nContextType {

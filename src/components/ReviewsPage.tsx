@@ -1,5 +1,5 @@
 // components/ReviewsPage.tsx
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Star, Upload, User } from 'lucide-react';
 import { reviewService, ReviewSubmission } from '../services/api/review.service';
 import { useAuth } from '../hooks/useAuth';
@@ -9,6 +9,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 import { Card } from '../components/ui/card';
 import { toast } from 'sonner';
+import { useI18n } from '../lib/i18n';
 
 interface FormData {
   photo: File | null;
@@ -21,6 +22,7 @@ interface FormData {
 
 export function ReviewsPage() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState<FormData>({
@@ -47,7 +49,7 @@ export function ReviewsPage() {
     
     if (!formData.firstName.trim() || !formData.lastName.trim() || 
         !formData.socialStatus.trim() || !formData.comment.trim()) {
-      toast.error('Tous les champs sont obligatoires');
+      toast.error(t('reviews.allFieldsRequired'));
       return;
     }
 
@@ -73,9 +75,9 @@ export function ReviewsPage() {
 
       await reviewService.submitReview(submitData);
       setSubmitted(true);
-      toast.success('Votre avis a été soumis avec succès ! Il sera examiné avant publication.');
+      toast.success(t('reviews.success'));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erreur lors de la soumission');
+      toast.error(error instanceof Error ? error.message : t('reviews.error'));
     } finally {
       setIsSubmitting(false);
     }
@@ -85,7 +87,7 @@ export function ReviewsPage() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) { // 5MB max
-        toast.error('L\'image ne doit pas dépasser 5MB');
+        toast.error(t('reviews.imageTooLarge'));
         return;
       }
       setFormData(prev => ({ ...prev, photo: file }));
@@ -102,16 +104,16 @@ export function ReviewsPage() {
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Merci pour votre avis !
+            {t('reviews.thankYou')}
           </h2>
           <p className="text-gray-600 mb-6">
-            Votre avis a été soumis avec succès. Il sera examiné par notre équipe avant d'être publié.
+            {t('reviews.thankYouMessage')}
           </p>
           <Button 
             onClick={() => window.close()}
             className="w-full"
           >
-            Fermer
+            {t('reviews.close')}
           </Button>
         </Card>
       </div>
@@ -123,10 +125,10 @@ export function ReviewsPage() {
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            Partagez votre expérience
+            {t('reviews.title')}
           </h1>
           <p className="text-gray-600">
-            Votre avis nous aide à améliorer notre service et aide les autres utilisateurs.
+            {t('reviews.subtitle')}
           </p>
         </div>
 
@@ -134,7 +136,7 @@ export function ReviewsPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Photo (optionnelle) */}
             <div>
-              <Label htmlFor="photo">Photo (optionnelle)</Label>
+              <Label htmlFor="photo">{t('reviews.photo')}</Label>
               <div className="mt-2">
                 <div className="flex items-center gap-4">
                   {formData.photo ? (
@@ -162,7 +164,7 @@ export function ReviewsPage() {
                       onClick={() => document.getElementById('photo')?.click()}
                     >
                       <Upload className="w-4 h-4 mr-2" />
-                      Choisir une photo
+                      {t('reviews.choosePhoto')}
                     </Button>
                   </div>
                 </div>
@@ -172,7 +174,7 @@ export function ReviewsPage() {
             {/* Nom et Prénom */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="firstName">Prénom *</Label>
+                <Label htmlFor="firstName">{t('reviews.firstName')}</Label>
                 <Input
                   id="firstName"
                   value={formData.firstName}
@@ -183,7 +185,7 @@ export function ReviewsPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="lastName">Nom *</Label>
+                <Label htmlFor="lastName">{t('reviews.lastName')}</Label>
                 <Input
                   id="lastName"
                   value={formData.lastName}
@@ -197,12 +199,12 @@ export function ReviewsPage() {
 
             {/* Statut social */}
             <div>
-              <Label htmlFor="socialStatus">Statut social *</Label>
+              <Label htmlFor="socialStatus">{t('reviews.socialStatus')}</Label>
               <Input
                 id="socialStatus"
                 value={formData.socialStatus}
                 onChange={(e) => setFormData(prev => ({ ...prev, socialStatus: e.target.value }))}
-                placeholder="Ex: Étudiant, Ingénieur, Médecin, etc."
+                placeholder={t('reviews.socialStatusPlaceholder')}
                 className="text-base"
                 required
               />
@@ -210,7 +212,7 @@ export function ReviewsPage() {
 
             {/* Note */}
             <div>
-              <Label>Nombre d'étoiles *</Label>
+              <Label>{t('reviews.rating')}</Label>
               <div className="flex gap-2 mt-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Button
@@ -233,12 +235,12 @@ export function ReviewsPage() {
 
             {/* Commentaire */}
             <div>
-              <Label htmlFor="comment">Votre avis *</Label>
+              <Label htmlFor="comment">{t('reviews.comment')}</Label>
               <Textarea
                 id="comment"
                 value={formData.comment}
                 onChange={(e) => setFormData(prev => ({ ...prev, comment: e.target.value }))}
-                placeholder="Partagez votre expérience avec notre service..."
+                placeholder={t('reviews.commentPlaceholder')}
                 rows={4}
                 className="text-base"
                 required
@@ -248,7 +250,7 @@ export function ReviewsPage() {
             {user && (
               <div className="bg-blue-50 p-4 rounded-lg">
                 <p className="text-sm text-blue-700">
-                  ✓ Connecté en tant que {user.firstName} {user.lastName}
+                  {t('reviews.connectedAs').replace('{firstName}', user.firstName || '').replace('{lastName}', user.lastName || '')}
                 </p>
               </div>
             )}
@@ -258,7 +260,7 @@ export function ReviewsPage() {
               className="w-full bg-green-600 hover:bg-green-700"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Envoi en cours...' : 'Soumettre mon avis'}
+              {isSubmitting ? t('reviews.submitting') : t('reviews.submit')}
             </Button>
           </form>
         </Card>
