@@ -10,7 +10,7 @@ import { VerifyEmail } from './components/auth/VerifyEmail';
 import { ReviewsPage } from './components/ReviewsPage';
 
 // Admin Components
-import { Dashboard } from './components/admin/dashboard/Dashboard';
+import { Dashboard } from './components/admin/Dashboard/Dashboard';
 import { BikeManagement } from './components/admin/Bikes/BikeManagement';
 import { BikeDetails } from './components/admin/Bikes/BikeDetails';
 import { BikeTripHistory } from './components/admin/Bikes/BikeTripHistory';
