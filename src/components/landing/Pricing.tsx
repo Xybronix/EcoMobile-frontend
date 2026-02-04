@@ -55,11 +55,11 @@ export function Pricing(this: any) {
 
   const getPlanFeatures = (plan: any) => {
     const features = [
-      `Minimum ${plan.minimumHours}h de location`,
-      `Déverrouillage inclus (${formatPrice(pricing?.unlockFee || 0)} FCFA)`,
-      `Disponibilité 24h/7j`,
-      `Support client`,
-      `Application mobile`,
+      t('pricing.landing.features.minimumHours').replace('{hours}', plan.minimumHours.toString()),
+      t('pricing.landing.features.unlockIncluded'),
+      t('pricing.landing.features.availability'),
+      t('pricing.landing.features.support'),
+      t('pricing.landing.features.mobileApp'),
     ];
 
     // Ajouter les promotions comme features
@@ -82,7 +82,12 @@ export function Pricing(this: any) {
   const getNextHour = () => {
     const now = new Date();
     const nextHour = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() + 1, 0, 0);
-    return nextHour.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    // Utiliser la zone horaire du Cameroun (Africa/Douala, GMT+1)
+    return nextHour.toLocaleTimeString('fr-CM', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      timeZone: 'Africa/Douala'
+    });
   };
 
   if (isLoading) {
@@ -111,7 +116,7 @@ export function Pricing(this: any) {
               {t('pricing.title')}
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Aucun plan de tarification disponible pour le moment
+              {t('pricing.landing.noPlansAvailable')}
             </p>
           </div>
         </div>
@@ -127,7 +132,7 @@ export function Pricing(this: any) {
             {t('pricing.title')}
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Tarification par heure - Location minimum 1 heure
+            {t('pricing.landing.subtitle')}
           </p>
           
           {/* Indicateur de tarif actuel */}
@@ -144,7 +149,11 @@ export function Pricing(this: any) {
             <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 px-4 py-2 rounded-lg">
               <Clock className="w-4 h-4" />
               <span className="text-sm font-medium">
-                Prochaine mise à jour : {pricing?.nextUpdate ? new Date(pricing.nextUpdate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : this.getNextHour()}
+                {t('pricing.landing.nextUpdate')} {pricing?.nextUpdate ? new Date(pricing.nextUpdate).toLocaleTimeString('fr-CM', { 
+                  hour: '2-digit', 
+                  minute: '2-digit',
+                  timeZone: 'Africa/Douala'
+                }) : getNextHour()}
               </span>
             </div>
           </div>
@@ -171,7 +180,7 @@ export function Pricing(this: any) {
                 {hasPromotions && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-orange-500 text-white px-4 py-1 rounded-full text-sm flex items-center gap-1" style={{ fontWeight: 600 }}>
                     <Tag className="w-3 h-3" />
-                    Promotion !
+                    {t('pricing.landing.promotion')}
                   </div>
                 )}
 
@@ -189,33 +198,43 @@ export function Pricing(this: any) {
                     <span className="text-4xl text-gray-900" style={{ fontWeight: 700 }}>
                       {formatPrice(plan.hourlyRate)}
                     </span>
-                    <span className="text-gray-600">FCFA</span>
+                    <span className="text-gray-600">{t('pricing.landing.currency')}</span>
                   </div>
                   
-                  <div className="text-sm text-gray-500 mt-1">par heure (min. {plan.minimumHours}h)</div>
+                  <div className="text-sm text-gray-500 mt-1">{t('pricing.landing.perHour').replace('{hours}', plan.minimumHours.toString())}</div>
                   
                   {savings && (
                     <div className="mt-2">
                       <Badge variant="destructive" className="bg-orange-100 text-orange-800">
                         <Percent className="w-3 h-3 mr-1" />
-                        Économisez {savings.percentage}% ({formatPrice(savings.amount)} FCFA)
+                        {t('pricing.landing.save')
+                          .replace('{percentage}', savings.percentage.toString())
+                          .replace('{amount}', formatPrice(savings.amount))}
                       </Badge>
                     </div>
                   )}
                   
-                  {/* Autres tarifs */}
-                  <div className="mt-4 space-y-1 text-sm text-gray-600">
-                    <div>24h : {formatPrice(plan.dailyRate)} FCFA</div>
-                    <div>7 jours : {formatPrice(plan.weeklyRate)} FCFA</div>
-                    <div>30 jours : {formatPrice(plan.monthlyRate)} FCFA</div>
-                  </div>
+                  {/* Autres tarifs - Afficher uniquement ceux avec un prix > 0 */}
+                  {(plan.dailyRate > 0 || plan.weeklyRate > 0 || plan.monthlyRate > 0) && (
+                    <div className="mt-4 space-y-1 text-sm text-gray-600">
+                      {plan.dailyRate > 0 && (
+                        <div>{t('pricing.landing.daily')} {formatPrice(plan.dailyRate)} {t('pricing.landing.currency')}</div>
+                      )}
+                      {plan.weeklyRate > 0 && (
+                        <div>{t('pricing.landing.weekly')} {formatPrice(plan.weeklyRate)} {t('pricing.landing.currency')}</div>
+                      )}
+                      {plan.monthlyRate > 0 && (
+                        <div>{t('pricing.landing.monthly')} {formatPrice(plan.monthlyRate)} {t('pricing.landing.currency')}</div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Promotions actives */}
                   {hasPromotions && (
                     <div className="mt-3 space-y-1">
                       {plan.appliedPromotions!.map((promo: any, promoIndex: number) => (
                         <div key={promoIndex} className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
-                          {promo.name}: {promo.discountType === 'PERCENTAGE' ? `${promo.discountValue}%` : `${formatPrice(promo.discountValue)} FCFA`} de réduction
+                          {promo.name}: {promo.discountType === 'PERCENTAGE' ? `${promo.discountValue}%` : `${formatPrice(promo.discountValue)} ${t('pricing.landing.currency')}`} {t('pricing.landing.discount')}
                         </div>
                       ))}
                     </div>
@@ -223,7 +242,7 @@ export function Pricing(this: any) {
 
                   {plan.appliedRule && (
                     <div className="mt-2 text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
-                      Règle appliquée : {plan.appliedRule}
+                      {t('pricing.landing.ruleApplied')} {plan.appliedRule}
                     </div>
                   )}
                 </div>
@@ -246,7 +265,7 @@ export function Pricing(this: any) {
                       : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
                   }`}
                 >
-                  {hasPromotions ? 'Profiter de la promotion' : (t('pricing.selectPlan') || 'Choisir ce plan')}
+                  {hasPromotions ? t('pricing.landing.takePromotion') : (t('pricing.selectPlan') || 'Choisir ce plan')}
                 </Button>
               </div>
             );
@@ -255,10 +274,10 @@ export function Pricing(this: any) {
 
         <div className="mt-12 text-center">
           <p className="text-gray-600">
-            Tous les prix incluent les frais de déverrouillage. Location minimum 1 heure.
+            {t('pricing.landing.footer.note')}
           </p>
           <p className="text-sm text-gray-500 mt-2">
-            Les tarifs peuvent varier selon l'heure et le jour. Mise à jour automatique toutes les heures.
+            {t('pricing.landing.footer.variation')}
           </p>
         </div>
       </div>

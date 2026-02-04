@@ -745,6 +745,28 @@ const translations: Translations = {
   'reviews.thankYou': { fr: 'Merci pour votre avis !', en: 'Thank you for your review!' },
   'reviews.thankYouMessage': { fr: 'Votre avis a été soumis avec succès. Il sera examiné par notre équipe avant d\'être publié.', en: 'Your review has been submitted successfully. It will be reviewed by our team before being published.' },
   'reviews.close': { fr: 'Fermer', en: 'Close' },
+  
+  // Pricing Landing Page - Additional keys
+  'pricing.landing.subtitle': { fr: 'Tarification par heure - Location minimum 1 heure', en: 'Hourly pricing - Minimum 1 hour rental' },
+  'pricing.landing.noPlansAvailable': { fr: 'Aucun plan de tarification disponible pour le moment', en: 'No pricing plans available at the moment' },
+  'pricing.landing.nextUpdate': { fr: 'Prochaine mise à jour :', en: 'Next update:' },
+  'pricing.landing.promotion': { fr: 'Promotion !', en: 'Promotion!' },
+  'pricing.landing.currency': { fr: 'FCFA', en: 'FCFA' },
+  'pricing.landing.perHour': { fr: 'par heure (min. {hours}h)', en: 'per hour (min. {hours}h)' },
+  'pricing.landing.save': { fr: 'Économisez {percentage}% ({amount} FCFA)', en: 'Save {percentage}% ({amount} FCFA)' },
+  'pricing.landing.daily': { fr: '24h :', en: '24h:' },
+  'pricing.landing.weekly': { fr: '7 jours :', en: '7 days:' },
+  'pricing.landing.monthly': { fr: '30 jours :', en: '30 days:' },
+  'pricing.landing.discount': { fr: 'de réduction', en: 'discount' },
+  'pricing.landing.ruleApplied': { fr: 'Règle appliquée :', en: 'Rule applied:' },
+  'pricing.landing.takePromotion': { fr: 'Profiter de la promotion', en: 'Take advantage of the promotion' },
+  'pricing.landing.footer.note': { fr: 'Tous les prix incluent les frais de déverrouillage. Location minimum 1 heure.', en: 'All prices include unlock fees. Minimum 1 hour rental.' },
+  'pricing.landing.footer.variation': { fr: 'Les tarifs peuvent varier selon l\'heure et le jour. Mise à jour automatique toutes les heures.', en: 'Prices may vary by time and day. Automatic update every hour.' },
+  'pricing.landing.features.minimumHours': { fr: 'Minimum {hours}h de location', en: 'Minimum {hours}h rental' },
+  'pricing.landing.features.unlockIncluded': { fr: 'Déverrouillage inclus (Gratuit)', en: 'Unlock included (Free)' },
+  'pricing.landing.features.availability': { fr: 'Disponibilité 24h/7j', en: '24/7 availability' },
+  'pricing.landing.features.support': { fr: 'Support client', en: 'Customer support' },
+  'pricing.landing.features.mobileApp': { fr: 'Application mobile', en: 'Mobile app' },
 };
 
 interface I18nContextType {
