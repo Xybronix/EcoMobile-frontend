@@ -25,29 +25,64 @@ export function Dashboard() {
     try {
       setIsLoading(true);
       
-      // Load all data in parallel
-      const [dashboardResponse, tripsResponse, incidentsResponse, realtimePositions] = await Promise.all([
-        adminService.getDashboardStats(),
-        ridesService.getAllRides({ limit: 10, status: 'IN_PROGRESS' }),
-        adminService.getIncidents({ limit: 5, status: 'OPEN' }),
-        bikeService.getRealtimePositions()
-      ]);
+      // OPTIMISATION: Utiliser l'endpoint groupé pour récupérer toutes les données en une seule requête
+      // Au lieu de 4 requêtes séparées, on fait 1 seule requête
+      try {
+        const completeData = await adminService.getDashboardComplete();
+        
+        // Adapter la structure pour correspondre à l'interface DashboardStats attendue
+        setDashboardData({
+          totalUsers: completeData.stats.users.total,
+          totalBikes: completeData.stats.bikes.total,
+          totalRides: completeData.stats.rides.total,
+          totalRevenue: completeData.stats.revenue.total,
+          activeUsers: completeData.stats.users.recent,
+          availableBikes: completeData.stats.bikes.byStatus.AVAILABLE || 0,
+          activeRides: completeData.stats.rides.active,
+          ongoingRides: completeData.stats.rides.active,
+          revenueToday: 0, // Calculé séparément si nécessaire
+          userGrowth: 0,
+          bikeUtilization: 0,
+          avgTripDuration: 0,
+          popularZones: [],
+          maintenanceBikes: completeData.stats.bikes.byStatus.MAINTENANCE || 0,
+          weeklyGrowth: {
+            users: 0,
+            rides: 0,
+            revenue: 0
+          },
+          recentActivity: [],
+          gpsData: completeData.gpsData
+        });
 
-      setDashboardData({
-        ...dashboardResponse,
-        gpsData: {
-          total: realtimePositions.length,
-          online: realtimePositions.filter(bike => bike.isOnline).length,
-          offline: realtimePositions.filter(bike => !bike.isOnline).length
+        setRecentTrips(completeData.recentTrips || []);
+        setRecentIncidents(completeData.recentIncidents || []);
+      } catch (error) {
+        // Fallback vers l'ancienne méthode si l'endpoint groupé n'est pas disponible
+        console.warn('Dashboard complete endpoint not available, using fallback');
+        const [dashboardResponse, tripsResponse, incidentsResponse, realtimePositions] = await Promise.all([
+          adminService.getDashboardStats(),
+          ridesService.getAllRides({ limit: 10, status: 'IN_PROGRESS' }),
+          adminService.getIncidents({ limit: 5, status: 'OPEN' }),
+          bikeService.getRealtimePositions()
+        ]);
+
+        setDashboardData({
+          ...dashboardResponse,
+          gpsData: {
+            total: realtimePositions.length,
+            online: realtimePositions.filter(bike => bike.isOnline).length,
+            offline: realtimePositions.filter(bike => !bike.isOnline).length
+          }
+        });
+
+        if (tripsResponse && tripsResponse.rides) {
+          setRecentTrips(tripsResponse.rides);
         }
-      });
 
-      if (tripsResponse && tripsResponse.rides) {
-        setRecentTrips(tripsResponse.rides);
-      }
-
-      if (incidentsResponse && incidentsResponse.incidents) {
-        setRecentIncidents(incidentsResponse.incidents);
+        if (incidentsResponse && incidentsResponse.incidents) {
+          setRecentIncidents(incidentsResponse.incidents);
+        }
       }
 
     } catch (error) {

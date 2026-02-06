@@ -7,6 +7,7 @@ import { notificationService } from '../../services/api/notification.service';
 import { usePermissions } from '../../hooks/usePermissions';
 import { ProtectedAccess } from '../shared/ProtectedAccess';
 import { Button } from '../ui/button';
+import { useNotificationSSE } from '../../hooks/useNotificationSSE';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,44 +28,16 @@ export function AdminTopBar({ onToggleSidebar, onToggleMobileMenu }: AdminTopBar
   const { hasPermission } = usePermissions();
   const navigate = useNavigate();
   
-  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState<number>(0);
-  const [loadingNotifications, setLoadingNotifications] = useState<boolean>(false);
-
   const canReadNotifications = hasPermission('notifications', 'read');
+  
+  // Utiliser SSE pour les notifications en temps réel au lieu de polling
+  const { unreadCount: unreadNotificationsCount, isConnected } = useNotificationSSE();
+  const [loadingNotifications, setLoadingNotifications] = useState<boolean>(!isConnected);
 
   useEffect(() => {
-    const loadUnreadCount = async () => {
-      if (!canReadNotifications) {
-        return;
-      }
-
-      try {
-        setLoadingNotifications(true);
-        const count = await notificationService.getUnreadCount();
-        setUnreadNotificationsCount(count);
-      } catch (error) {
-        setUnreadNotificationsCount(0);
-      } finally {
-        setLoadingNotifications(false);
-      }
-    };
-
-    loadUnreadCount();
-  }, [canReadNotifications]);
-
-  useEffect(() => {
-    if (!canReadNotifications) return;
-
-    const interval = setInterval(async () => {
-      try {
-        const count = await notificationService.getUnreadCount();
-        setUnreadNotificationsCount(count);
-      } catch (error) {
-      }
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [canReadNotifications]);
+    // Mettre à jour l'état de chargement basé sur la connexion SSE
+    setLoadingNotifications(!isConnected);
+  }, [isConnected]);
 
   const handleBackToLanding = () => {
     navigate('/');

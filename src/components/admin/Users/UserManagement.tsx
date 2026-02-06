@@ -51,35 +51,18 @@ export function UserManagement() {
         search: searchTerm || undefined
       });
 
-      const usersWithDetails = await Promise.all(
-        response.users.map(async (user) => {
-          try {
-            const userDetails = await userService.getUserById(user.id);
-            
-            return {
-              ...user,
-              accountBalance: userDetails?.stats?.wallet?.balance || user.accountBalance || 0,
-              totalSpent: userDetails?.stats?.rides?.totalCost || user.totalSpent || 0,
-              totalTrips: userDetails?.stats?.rides?.total || user.totalTrips || 0,
-              depositBalance: user.depositBalance || 0,
-              reliabilityScore: Number(user.reliabilityScore) || 0,
-              name: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email,
-              _stats: userDetails?.stats || {}
-            };
-          } catch (error) {
-            console.error(`Erreur pour l'utilisateur ${user.id}:`, error);
-            return {
-              ...user,
-              accountBalance: user.accountBalance || 0,
-              totalSpent: user.totalSpent || 0,
-              totalTrips: user.totalTrips || 0,
-              depositBalance: user.depositBalance || 0,
-              reliabilityScore: Number(user.reliabilityScore) || 0,
-              name: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email
-            };
-          }
-        })
-      );
+      // Plus besoin de faire des requêtes individuelles pour chaque utilisateur
+      const usersWithDetails = response.users.map((user) => {
+        return {
+          ...user,
+          accountBalance: user.accountBalance || 0,
+          totalSpent: user.totalSpent || 0,
+          totalTrips: user.totalTrips || 0,
+          depositBalance: user.depositBalance || 0,
+          reliabilityScore: Number(user.reliabilityScore) || 0,
+          name: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email
+        };
+      });
       
       setUsers(usersWithDetails);
       setTotalUsers(response.total || 0);
@@ -411,9 +394,9 @@ export function UserManagement() {
                   <TableCell className="text-center">
                     <div className="flex items-center justify-center gap-1">
                       {user.emailVerified ? (
-                        <CheckCircle className="w-4 h-4 text-green-600" title={t('users.emailVerified') || 'Email vérifié'} aria-label={t('users.emailVerified') || 'Email vérifié'} />
+                        <CheckCircle className="w-4 h-4 text-green-600" aria-label={t('users.emailVerified') || 'Email vérifié'} />
                       ) : (
-                        <AlertCircle className="w-4 h-4 text-yellow-600" title={t('users.emailNotVerified') || 'Email non vérifié'} aria-label={t('users.emailNotVerified') || 'Email non vérifié'} />
+                        <AlertCircle className="w-4 h-4 text-yellow-600" aria-label={t('users.emailNotVerified') || 'Email non vérifié'} />
                       )}
                       {user.phoneVerified ? (
                         <Phone className="w-4 h-4 text-green-600" title={t('users.phoneVerified') || 'Téléphone vérifié'} aria-label={t('users.phoneVerified') || 'Téléphone vérifié'} />
@@ -600,8 +583,8 @@ export function UserManagement() {
             </DialogTitle>
             <DialogDescription>
               {confirmDialog.type === 'block' 
-                ? (t('users.blockUserConfirm', { name: confirmDialog.user?.name || 'cet utilisateur' }) || `Êtes-vous sûr de vouloir bloquer l'utilisateur "${confirmDialog.user?.name || 'cet utilisateur'}" ? Cette action empêchera l'utilisateur d'accéder au service.`)
-                : (t('users.unblockUserConfirm', { name: confirmDialog.user?.name || 'cet utilisateur' }) || `Êtes-vous sûr de vouloir débloquer l'utilisateur "${confirmDialog.user?.name || 'cet utilisateur'}" ? Cette action permettra à l'utilisateur d'accéder à nouveau au service.`)
+                ? t('users.blockUserConfirm', { name: confirmDialog.user?.name || 'cet utilisateur' })
+                : t('users.unblockUserConfirm', { name: confirmDialog.user?.name || 'cet utilisateur' })
               }
             </DialogDescription>
           </DialogHeader>

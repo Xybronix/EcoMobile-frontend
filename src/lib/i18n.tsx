@@ -788,8 +788,14 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('freebike_language', lang);
   };
 
-  const t = (key: string): string => {
-    return translations[key]?.[language] || key;
+  const t = (key: string, params?: Record<string, string | number>): string => {
+    let translation = translations[key]?.[language] || key;
+    if (params) {
+      Object.entries(params).forEach(([param, value]) => {
+        translation = translation.replace(`{${param}}`, value.toString());
+      });
+    }
+    return translation;
   };
 
   return (

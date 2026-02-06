@@ -117,6 +117,50 @@ export interface PricingConfig {
 }
 
 export class AdminService {
+  /**
+   * OPTIMISATION: Récupère toutes les données du dashboard en une seule requête groupée
+   * Remplace 4 requêtes séparées par 1 seule requête
+   */
+  async getDashboardComplete(): Promise<{
+    stats: {
+      users: { total: number; recent: number };
+      bikes: { total: number; byStatus: Record<string, number> };
+      rides: { total: number; active: number; today: number };
+      revenue: { total: number };
+    };
+    recentTrips: any[];
+    recentIncidents: Incident[];
+    gpsData: {
+      total: number;
+      online: number;
+      offline: number;
+    };
+    realtimePositions: any[];
+  }> {
+    const response = await apiClient.get<{
+      stats: {
+        users: { total: number; recent: number };
+        bikes: { total: number; byStatus: Record<string, number> };
+        rides: { total: number; active: number; today: number };
+        revenue: { total: number };
+      };
+      recentTrips: any[];
+      recentIncidents: Incident[];
+      gpsData: {
+        total: number;
+        online: number;
+        offline: number;
+      };
+      realtimePositions: any[];
+    }>('/admin/dashboard/complete');
+
+    if (!response.success || !response.data) {
+      throw new Error(response.error || 'Erreur lors de la récupération du dashboard');
+    }
+
+    return response.data;
+  }
+
   async getDashboardStats(): Promise<DashboardStats> {
     const response = await apiClient.get<DashboardStats>('/admin/dashboard/stats');
     
