@@ -38,7 +38,16 @@ export interface BulkEmailResponse {
   total: number;
 }
 
+/** Cache pour éviter les appels répétés à getUnreadCount (TTL 30s) */
+let unreadCountCache: { count: number; until: number } | null = null;
+const UNREAD_COUNT_CACHE_TTL_MS = 30_000;
+
 export class NotificationService {
+  /** Invalide le cache (à appeler après marquer comme lu, etc.) */
+  invalidateUnreadCountCache(): void {
+    unreadCountCache = null;
+  }
+
   async getNotifications(filter?: 'all' | 'unread'): Promise<Notification[]> {
     try {
       const params = filter && filter !== 'all' ? { filter } : undefined;
@@ -59,7 +68,11 @@ export class NotificationService {
     }
   }
 
-  async getUnreadCount(): Promise<number> {
+  async getUnreadCount(bypassCache = false): Promise<number> {
+    const now = Date.now();
+    if (!bypassCache && unreadCountCache && unreadCountCache.until > now) {
+      return unreadCountCache.count;
+    }
     try {
       const response = await apiClient.get<{ unreadCount: number }>('/notifications/unread-count');
       
@@ -67,7 +80,9 @@ export class NotificationService {
         throw new Error(response.error || 'Erreur lors de la récupération du nombre de notifications non lues');
       }
 
-      return response.data.unreadCount || 0;
+      const count = response.data.unreadCount ?? 0;
+      unreadCountCache = { count, until: now + UNREAD_COUNT_CACHE_TTL_MS };
+      return count;
     } catch (error) {
       console.error('Error fetching unread count:', error);
       throw error;

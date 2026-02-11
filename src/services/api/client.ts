@@ -80,12 +80,23 @@ export interface ApiError {
   code?: string;
 }
 
+/** Cache GET responses pour éviter les requêtes en double (TTL 15s) */
+const GET_CACHE_TTL_MS = 15_000;
+const getCache = new Map<string, { response: ApiResponse<unknown>; until: number }>();
+/** Requêtes GET en cours : déduplication */
+const getInFlight = new Map<string, Promise<ApiResponse<unknown>>>();
+
 // API Client class
 export class ApiClient {
   private baseURL: string;
 
   constructor(baseURL: string = API_BASE_URL) {
     this.baseURL = baseURL;
+  }
+
+  /** Invalide le cache GET (à appeler après une action qui modifie les données) */
+  static invalidateGetCache(): void {
+    getCache.clear();
   }
 
   private async request<T>(
@@ -168,10 +179,39 @@ export class ApiClient {
 
   async get<T>(endpoint: string, params?: Record<string, any>): Promise<ApiResponse<T>> {
     const url = params ? `${endpoint}?${new URLSearchParams(params)}` : endpoint;
-    return this.request<T>(url);
+    const cacheKey = `GET:${url}`;
+    const now = Date.now();
+
+    // 1. Cache valide → retour immédiat
+    const cached = getCache.get(cacheKey);
+    if (cached && cached.until > now) {
+      return { ...cached.response, data: cached.response.data } as ApiResponse<T>;
+    }
+
+    // 2. Requête déjà en cours → réutiliser la même promesse
+    const inFlight = getInFlight.get(cacheKey);
+    if (inFlight) {
+      const result = await inFlight;
+      return { ...result, data: result.data } as ApiResponse<T>;
+    }
+
+    // 3. Nouvelle requête
+    const promise = this.request<T>(url).then((res) => {
+      getInFlight.delete(cacheKey);
+      if (res.success && res.status === 200) {
+        getCache.set(cacheKey, {
+          response: { ...res },
+          until: now + GET_CACHE_TTL_MS,
+        });
+      }
+      return res;
+    });
+    getInFlight.set(cacheKey, promise as Promise<ApiResponse<unknown>>);
+    return promise;
   }
 
   async post<T>(endpoint: string, body?: any): Promise<ApiResponse<T>> {
+    ApiClient.invalidateGetCache();
     return this.request<T>(endpoint, {
       method: 'POST',
       body: body ? JSON.stringify(body) : undefined,
@@ -179,6 +219,7 @@ export class ApiClient {
   }
 
   async put<T>(endpoint: string, body?: any): Promise<ApiResponse<T>> {
+    ApiClient.invalidateGetCache();
     return this.request<T>(endpoint, {
       method: 'PUT',
       body: body ? JSON.stringify(body) : undefined,
@@ -186,6 +227,7 @@ export class ApiClient {
   }
 
   async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
+    ApiClient.invalidateGetCache();
     return this.request<T>(endpoint, {
       method: 'DELETE',
     });

@@ -3,164 +3,127 @@ import { useAuth } from './useAuth';
 import { notificationService } from '../services/api/notification.service';
 import { getAuthToken } from '../services/api/client';
 
+/** Une seule connexion SSE par URL : évite les doublons si plusieurs composants utilisent le hook */
+let sharedConnection: { url: string; es: EventSource; refCount: number } | null = null;
+
 /**
- * Hook pour utiliser Server-Sent Events (SSE) pour les notifications en temps réel
- * Remplace le polling et réduit drastiquement le nombre de requêtes
+ * Hook pour utiliser Server-Sent Events (SSE) pour les notifications en temps réel.
+ * Une seule connexion SSE, mise à jour du compteur uniquement quand le serveur envoie un événement.
  */
 export function useNotificationSSE() {
   const { user } = useAuth();
+  const token = getAuthToken();
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [isConnected, setIsConnected] = useState<boolean>(false);
-  const eventSourceRef = useRef<EventSource | null>(null);
-  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttempts = useRef<number>(0);
-  const maxReconnectAttempts = 5;
-  const reconnectDelay = 3000; // 3 secondes
+  const maxReconnectAttempts = 2;
+  const reconnectDelayMs = 5000;
+  const pollIntervalMs = 60000;
+  const cleanupPollingRef = useRef<(() => void) | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const token = getAuthToken();
     if (!token || !user) {
       return;
     }
 
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:10000/api/v1';
+    const sseUrl = `${apiUrl}/notifications/stream?token=${encodeURIComponent(token)}`;
+
+    const fallbackToPolling = () => {
+      cleanupPollingRef.current?.();
+      let pollInterval: ReturnType<typeof setInterval> | null = null;
+      pollInterval = setInterval(() => {
+        notificationService.getUnreadCount().then(setUnreadCount).catch(() => {});
+      }, pollIntervalMs);
+      cleanupPollingRef.current = () => {
+        if (pollInterval) clearInterval(pollInterval);
+        cleanupPollingRef.current = null;
+      };
+    };
+
     const connectSSE = () => {
-      // Fermer la connexion existante si elle existe
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
+      if (sharedConnection?.url === sseUrl && sharedConnection.es.readyState === EventSource.OPEN) {
+        sharedConnection.refCount += 1;
+        setIsConnected(true);
+        return;
+      }
+      if (sharedConnection?.url === sseUrl) {
+        sharedConnection.es.close();
+        sharedConnection = null;
       }
 
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'https://env-freebike-xybronix.hidora.com/api/v1';
-        // EventSource ne supporte pas les headers personnalisés, on passe le token en query param
-        const sseUrl = `${apiUrl}/notifications/stream?token=${encodeURIComponent(token)}`;
-
-        // Créer la connexion SSE
-        const eventSource = new EventSource(sseUrl, {
-          withCredentials: true,
-        });
-
-        // Ajouter le token dans les headers via une requête fetch personnalisée
-        // Note: EventSource ne supporte pas les headers personnalisés nativement
-        // On utilise une approche alternative avec fetch et un EventSource polyfill ou on passe le token en query param
-        // Pour l'instant, on utilise l'authentification via cookie/session si disponible
-        // Sinon, on peut utiliser un proxy ou modifier le backend pour accepter le token en query param
+        const eventSource = new EventSource(sseUrl, { withCredentials: true });
 
         eventSource.onopen = () => {
-          console.log('[SSE] Connected to notification stream');
+          sharedConnection = { url: sseUrl, es: eventSource, refCount: 1 };
           setIsConnected(true);
           reconnectAttempts.current = 0;
         };
 
-        eventSource.onmessage = (event) => {
-          // Les messages de heartbeat sont ignorés (commencent par ':')
-          if (event.data.startsWith(':')) {
-            return;
-          }
-
+        eventSource.onmessage = (event: MessageEvent) => {
+          if (event.data?.startsWith(':')) return;
           try {
             const data = JSON.parse(event.data);
-            if (data.type === 'unread_count') {
-              setUnreadCount(data.count);
-            }
-          } catch (error) {
-            console.error('[SSE] Error parsing message:', error);
-          }
+            if (data.type === 'unread_count' && typeof data.count === 'number') setUnreadCount(data.count);
+          } catch {}
         };
 
         eventSource.addEventListener('notification', (event: MessageEvent) => {
           try {
             const data = JSON.parse(event.data);
-            if (data.type === 'notification') {
-              // Mettre à jour le nombre de notifications non lues
-              setUnreadCount((prev) => prev + 1);
-            }
-          } catch (error) {
-            console.error('[SSE] Error parsing notification event:', error);
-          }
+            if (data.type === 'notification') setUnreadCount((prev) => prev + 1);
+          } catch {}
         });
 
         eventSource.addEventListener('unread_count', (event: MessageEvent) => {
           try {
             const data = JSON.parse(event.data);
-            if (data.type === 'unread_count') {
-              setUnreadCount(data.count);
-            }
-          } catch (error) {
-            console.error('[SSE] Error parsing unread_count event:', error);
-          }
+            if (data.type === 'unread_count' && typeof data.count === 'number') setUnreadCount(data.count);
+          } catch {}
         });
 
-        eventSource.onerror = (error) => {
-          console.error('[SSE] Connection error:', error);
+        eventSource.onerror = () => {
           setIsConnected(false);
           eventSource.close();
+          if (sharedConnection?.url === sseUrl) sharedConnection = null;
 
-          // Tentative de reconnexion
           if (reconnectAttempts.current < maxReconnectAttempts) {
             reconnectAttempts.current += 1;
-            reconnectTimeoutRef.current = setTimeout(() => {
-              connectSSE();
-            }, reconnectDelay * reconnectAttempts.current);
+            reconnectTimeoutRef.current = setTimeout(connectSSE, reconnectDelayMs);
           } else {
-            console.error('[SSE] Max reconnection attempts reached. Falling back to polling.');
-            // Fallback vers polling si SSE échoue
-            cleanupPolling = fallbackToPolling();
+            fallbackToPolling();
           }
         };
 
-        eventSourceRef.current = eventSource;
-      } catch (error) {
-        console.error('[SSE] Error creating EventSource:', error);
+        sharedConnection = { url: sseUrl, es: eventSource, refCount: 1 };
+      } catch {
         setIsConnected(false);
         fallbackToPolling();
       }
     };
 
-    const fallbackToPolling = () => {
-      // Fallback vers polling toutes les 60 secondes (au lieu de 30)
-      // Cette fonction retourne une fonction de nettoyage
-      let pollInterval: ReturnType<typeof setInterval> | null = null;
-      
-      pollInterval = setInterval(async () => {
-        try {
-          const count = await notificationService.getUnreadCount();
-          setUnreadCount(count);
-        } catch (error) {
-          console.error('[SSE Fallback] Error fetching unread count:', error);
-        }
-      }, 60000); // 60 secondes au lieu de 30
-
-      return () => {
-        if (pollInterval) {
-          clearInterval(pollInterval);
-        }
-      };
-    };
-    
-    let cleanupPolling: (() => void) | null = null;
-
-    // Charger le nombre initial
-    notificationService.getUnreadCount()
-      .then(setUnreadCount)
-      .catch(console.error);
-
-    // Connecter au stream SSE
+    // Un seul appel initial (cache 30s côté notificationService)
+    notificationService.getUnreadCount().then(setUnreadCount).catch(() => {});
     connectSSE();
 
-    // Nettoyage
     return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
-      }
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
       }
-      if (cleanupPolling) {
-        cleanupPolling();
+      cleanupPollingRef.current?.();
+      cleanupPollingRef.current = null;
+      if (sharedConnection?.url === sseUrl) {
+        sharedConnection.refCount -= 1;
+        if (sharedConnection.refCount <= 0) {
+          sharedConnection.es.close();
+          sharedConnection = null;
+        }
       }
     };
-  }, [token]);
+  }, [token, user]);
 
   return { unreadCount, isConnected };
 }

@@ -59,6 +59,14 @@ const translations: Translations = {
   'bikes.gsmSignal': { fr: 'Signal GSM', en: 'GSM Signal' },
   'bikes.zone': { fr: 'Zone', en: 'Zone' },
   'bikes.speed': { fr: 'Vitesse', en: 'Speed' },
+
+  // Bike actions (déverrouillage / verrouillage)
+  'bikeActions.management': { fr: 'Gestion des Actions Vélos', en: 'Bike Action Management' },
+  'bikeActions.pendingUnlocks': { fr: 'Déverrouillages en attente', en: 'Pending unlocks' },
+  'bikeActions.pendingLocks': { fr: 'Verrouillages en attente', en: 'Pending locks' },
+  'bikeActions.todayActions': { fr: 'Actions aujourd\'hui', en: 'Actions today' },
+  'bikeActions.unlocks': { fr: 'Déverrouillages ({count})', en: 'Unlocks ({count})' },
+  'bikeActions.locks': { fr: 'Verrouillages ({count})', en: 'Locks ({count})' },
   
   // Users
   'users.management': { fr: 'Gestion des Utilisateurs', en: 'User Management' },
@@ -91,6 +99,10 @@ const translations: Translations = {
   'financial.startDate': { fr: 'Date de Début', en: 'Start Date' },
   'financial.endDate': { fr: 'Date de Fin', en: 'End Date' },
   'financial.apply': { fr: 'Appliquer', en: 'Apply' },
+  'financial.export': { fr: 'Exporter', en: 'Export' },
+  'financial.exportSuccess': { fr: 'Données exportées avec succès', en: 'Data exported successfully' },
+  'financial.exportError': { fr: 'Erreur lors de l\'export des données', en: 'Error exporting data' },
+  'financial.loading': { fr: 'Chargement des données financières...', en: 'Loading financial data...' },
   'financial.activeFilters': { fr: 'Filtres actifs', en: 'Active filters' },
   'financial.both': { fr: 'Revenus et Dépenses', en: 'Revenue and Expenses' },
   'financial.revenue': { fr: 'Revenus', en: 'Revenue' },
@@ -460,6 +472,11 @@ const translations: Translations = {
   'users.table.verification': { fr: 'Vérification', en: 'Verification' },
   'users.table.status': { fr: 'Statut', en: 'Status' },
   'users.table.actions': { fr: 'Actions', en: 'Actions' },
+  'users.status.active': { fr: 'Actif', en: 'Active' },
+  'users.status.blocked': { fr: 'Bloqué', en: 'Blocked' },
+  'users.status.pending': { fr: 'En attente', en: 'Pending' },
+  'users.depositExemption': { fr: 'Déblocage sans caution', en: 'Deposit exemption' },
+  'users.loadingDetails': { fr: 'Chargement des détails de l\'utilisateur...', en: 'Loading user details...' },
   'users.totalBalance': { fr: 'Solde Total', en: 'Total Balance' },
   'users.notAccessible': { fr: 'Non accessible', en: 'Not accessible' },
   'users.totalTrips': { fr: 'Total Trajets', en: 'Total Trips' },
