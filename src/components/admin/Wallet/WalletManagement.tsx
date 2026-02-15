@@ -577,6 +577,7 @@ export function WalletManagement() {
                       </Button>
                       
                       {/* Ne pas afficher les boutons de validation pour les charges admin (DAMAGE_CHARGE déjà validées) */}
+                      {/*
                       {transaction.type !== 'DAMAGE_CHARGE' && (
                         <ProtectedAccess 
                           mode="component" 
@@ -601,6 +602,30 @@ export function WalletManagement() {
                           }
                         />
                       )}
+                      */}
+
+                      <ProtectedAccess 
+                        mode="component" 
+                        resource="wallet" 
+                        action="update" 
+                        showFallback={false}
+                        fallback={
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => openActionDialog('validate', transaction)}
+                            disabled={actionLoading === transaction.id}
+                            aria-label={t('aria.validateTransaction') || 'Valider la transaction'}
+                            title={t('aria.validateTransaction') || 'Valider la transaction'}
+                          >
+                            {actionLoading === transaction.id ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            ) : (
+                              <CheckCircle className="w-4 h-4" />
+                            )}
+                          </Button>
+                        }
+                      />
 
                       <ProtectedAccess 
                         mode="component" 
