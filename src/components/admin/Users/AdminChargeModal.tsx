@@ -216,7 +216,7 @@ export function AdminChargeModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-orange-500" />
@@ -361,7 +361,6 @@ export function AdminChargeModal({
           <Button 
             onClick={handleSubmit} 
             disabled={isLoading || loadingData || !formData.userId || !formData.amount || !formData.reason}
-            className="bg-orange-600 hover:bg-orange-700"
             aria-label={isEditMode ? (t('aria.editCharge') || 'Modifier la charge') : (t('aria.assignCharge') || 'Affecter la charge')}
           >
             {isLoading ? (t('common.processing') || 'Traitement...') : isEditMode ? (t('charges.edit') || 'Modifier la charge') : (t('charges.assign') || 'Affecter la charge')}

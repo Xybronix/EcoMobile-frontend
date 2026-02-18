@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { DollarSign, Bike, Battery, MapPin, Plus, Edit, Check, X, Clock, Tag, Trash2, Eye, EyeOff } from 'lucide-react';
 import { Card } from '../../ui/card';
 import { Button } from '../../ui/button';

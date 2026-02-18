@@ -211,6 +211,76 @@ export class AdminService {
     return response.data;
   }
 
+  /* Subscription package / formula / promotion admin APIs (new system) */
+  async getSubscriptionPackages(): Promise<any[]> {
+    const response = await apiClient.get<any[]>('/admin/pricing/packages');
+    if (!response.success || !response.data) throw new Error(response.error || 'Erreur lors de la récupération des forfaits');
+    return response.data;
+  }
+
+  async getSubscriptionPackageById(id: string): Promise<any> {
+    const response = await apiClient.get<any>(`/admin/pricing/packages/${id}`);
+    if (!response.success || !response.data) throw new Error(response.error || 'Erreur lors de la récupération du forfait');
+    return response.data;
+  }
+
+  async createSubscriptionPackage(data: { name: string; description?: string }): Promise<any> {
+    const response = await apiClient.post<any>('/admin/pricing/packages', data);
+    if (!response.success || !response.data) throw new Error(response.error || 'Erreur lors de la création du forfait');
+    return response.data;
+  }
+
+  async updateSubscriptionPackage(id: string, data: any): Promise<any> {
+    const response = await apiClient.put<any>(`/admin/pricing/packages/${id}`, data);
+    if (!response.success || !response.data) throw new Error(response.error || 'Erreur lors de la mise à jour du forfait');
+    return response.data;
+  }
+
+  async deleteSubscriptionPackage(id: string): Promise<void> {
+    const response = await apiClient.delete<void>(`/admin/pricing/packages/${id}`);
+    if (!response.success) throw new Error(response.error || 'Erreur lors de la suppression du forfait');
+  }
+
+  async createSubscriptionFormula(data: any): Promise<any> {
+    const response = await apiClient.post<any>('/admin/pricing/formulas', data);
+    if (!response.success || !response.data) throw new Error(response.error || 'Erreur lors de la création de la formule');
+    return response.data;
+  }
+
+  async updateSubscriptionFormula(id: string, data: any): Promise<any> {
+    const response = await apiClient.put<any>(`/admin/pricing/formulas/${id}`, data);
+    if (!response.success || !response.data) throw new Error(response.error || 'Erreur lors de la mise à jour de la formule');
+    return response.data;
+  }
+
+  async deleteSubscriptionFormula(id: string): Promise<void> {
+    const response = await apiClient.delete<void>(`/admin/pricing/formulas/${id}`);
+    if (!response.success) throw new Error(response.error || 'Erreur lors de la suppression de la formule');
+  }
+
+  async getPromotions(): Promise<any[]> {
+    const response = await apiClient.get<any[]>('/admin/pricing/promotions');
+    if (!response.success || !response.data) throw new Error(response.error || 'Erreur lors de la récupération des promotions');
+    return response.data;
+  }
+
+  async createPromotion(data: any): Promise<any> {
+    const response = await apiClient.post<any>('/admin/pricing/promotions', data);
+    if (!response.success || !response.data) throw new Error(response.error || 'Erreur lors de la création de la promotion');
+    return response.data;
+  }
+
+  async updatePromotion(id: string, data: any): Promise<any> {
+    const response = await apiClient.put<any>(`/admin/pricing/promotions/${id}`, data);
+    if (!response.success || !response.data) throw new Error(response.error || 'Erreur lors de la mise à jour de la promotion');
+    return response.data;
+  }
+
+  async deletePromotion(id: string): Promise<void> {
+    const response = await apiClient.delete<void>(`/admin/pricing/promotions/${id}`);
+    if (!response.success) throw new Error(response.error || 'Erreur lors de la suppression de la promotion');
+  }
+
   async getIncidents(params?: {
     page?: number;
     limit?: number;

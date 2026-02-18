@@ -1,5 +1,6 @@
 import { Bike, Users, DollarSign, AlertTriangle, Activity, TrendingUp, MapPin, Battery, Loader2 } from 'lucide-react';
 import { Card } from '../../ui/card';
+import { DashboardMap } from './DashboardMap';
 import { BikeMap } from '../Bikes/BikeMap';
 import { Badge } from '../../ui/badge';
 import { useTranslation } from '../../../lib/i18n';
@@ -185,13 +186,7 @@ export function Dashboard() {
 
       {/* Map Section - S'assurer que la carte est visible et défilable */}
       <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <MapPin className="w-5 h-5 text-green-600" />
-          <h2>{t('dashboard.realtimeMap')}</h2>
-        </div>
-        <div className="relative rounded-lg overflow-hidden" style={{ height: '600px', width: '100%', minHeight: '600px' }}>
-          <BikeMap />
-        </div>
+        <BikeMap />
       </Card>
 
       {/* Two Column Layout */}

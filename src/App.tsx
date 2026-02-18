@@ -24,8 +24,8 @@ import { IncidentManagement } from './components/admin/Incidents/IncidentManagem
 import { ReviewManagement } from './components/admin/Review/ReviewManagement';
 import { WalletManagement } from './components/admin/Wallet/WalletManagement';
 import { ReservationManagement } from './components/admin/Reservations/ReservationManagement';
-import { PricingConfig } from './components/admin/Settings/PricingConfig';
 import { CompanySettings } from './components/admin/Settings/CompanySettings';
+import { SubscriptionPackageManager } from './components/admin/Settings/SubscriptionPackageManager';
 import { EmployeeManagement } from './components/admin/Employees/EmployeeManagement';
 import { RolesManagement } from './components/admin/Employees/RolesManagement';
 import { ActivityLogs } from './components/admin/Logs/ActivityLogs';
@@ -81,8 +81,9 @@ export default function App() {
               
               {/* Settings */}
               <Route path="wallet" element={<ProtectedAccess mode="route" resource="wallet" action="read"><WalletManagement /></ProtectedAccess>} />
-              <Route path="pricing" element={<ProtectedAccess mode="route" resource="pricing" action="read"><PricingConfig /></ProtectedAccess>} />
+              <Route path="pricing" element={<ProtectedAccess mode="route" resource="pricing" action="read"><SubscriptionPackageManager /></ProtectedAccess>} />
               <Route path="settings" element={<ProtectedAccess mode="route" resource="settings" action="read"><CompanySettings /></ProtectedAccess>} />
+              
               
               {/* Employee Management */}
               <Route path="employees" element={<ProtectedAccess mode="route" requiredRole="SUPER_ADMIN"><EmployeeManagement /></ProtectedAccess>} />
