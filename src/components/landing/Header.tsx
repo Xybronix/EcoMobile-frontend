@@ -96,7 +96,7 @@ export function Header() {
               {t('nav.giveReview')}
             </Button>
             
-            {/*}
+            {/*
             <Button onClick={handleNavigateToAdmin} variant="outline" className="text-sm xl:text-base">
               {t('nav.admin')}
             </Button>
@@ -174,9 +174,11 @@ export function Header() {
                 {t('nav.giveReview')}
               </Button>
               
+              {/*
               <Button onClick={handleNavigateToAdmin} variant="outline" className="w-full">
                 {t('nav.admin')}
               </Button>
+              */}
               
               <Button 
                 onClick={handleNavigateToMobile}
