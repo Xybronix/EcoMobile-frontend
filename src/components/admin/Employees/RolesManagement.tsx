@@ -12,6 +12,7 @@ import { rolesService, type Role, type Permission } from '../../../services/api/
 import { employeeService, type Employee } from '../../../services/api/employee.service';
 import { useTranslation } from '../../../lib/i18n';
 import { toast } from 'sonner';
+import { usePermissions } from '../../../hooks/usePermissions';
 
 interface RoleFormData {
   name: string;
@@ -73,6 +74,7 @@ function ConfirmDialog({
 
 export function RolesManagement() {
   const { t } = useTranslation();
+  const { can } = usePermissions();
   
   // États pour les données de l'API
   const [roles, setRoles] = useState<Role[]>([]);
@@ -328,10 +330,12 @@ export function RolesManagement() {
           <h1 className="text-2xl font-bold text-gray-900">{t('roles.management')}</h1>
           <p className="text-gray-600">{t('roles.overview')}</p>
         </div>
-        <Button onClick={handleAdd}>
-          <Plus className="w-4 h-4 mr-2" />
-          {t('roles.addNew')}
-        </Button>
+        {can.createRole() && (
+          <Button onClick={handleAdd}>
+            <Plus className="w-4 h-4 mr-2" />
+            {t('roles.addNew')}
+          </Button>
+        )}
       </div>
 
       {/* Roles Grid */}
@@ -364,24 +368,28 @@ export function RolesManagement() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => handleEdit(role)} 
-                  title={canModifyRole(role) ? t('common.edit') : "Non modifiable"}
-                  disabled={!canModifyRole(role)}
-                >
-                  <Edit className="w-4 h-4" />
-                </Button>
-                <Button 
-                  variant="destructive" 
-                  size="sm" 
-                  onClick={() => handleDelete(role)} 
-                  title={canDeleteRole(role) ? t('common.delete') : "Non supprimable"}
-                  disabled={!canDeleteRole(role)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                {can.updateRole() && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(role)}
+                    title={canModifyRole(role) ? t('common.edit') : "Non modifiable"}
+                    disabled={!canModifyRole(role)}
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                )}
+                {can.deleteRole() && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleDelete(role)}
+                    title={canDeleteRole(role) ? t('common.delete') : "Non supprimable"}
+                    disabled={!canDeleteRole(role)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -407,10 +415,12 @@ export function RolesManagement() {
             </div>
 
             <div className="mt-4 pt-4 border-t">
-              <Button variant="outline" className="w-full" size="sm" onClick={() => handleAssign(role)}>
-                <Users className="w-4 h-4 mr-2" />
-                Assigner aux utilisateurs
-              </Button>
+              {can.assignRole() && (
+                <Button variant="outline" className="w-full" size="sm" onClick={() => handleAssign(role)}>
+                  <Users className="w-4 h-4 mr-2" />
+                  Assigner aux utilisateurs
+                </Button>
+              )}
             </div>
           </Card>
         ))}

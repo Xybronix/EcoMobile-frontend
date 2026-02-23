@@ -17,6 +17,8 @@ import { Checkbox } from '../../ui/checkbox';
 import { toast } from 'sonner';
 import { ExportButtons } from '../ExportButtons';
 import { LocationSelector } from './LocationSelector';
+import { usePermissions } from '../../../hooks/usePermissions';
+import { ProtectedAccess } from '../../shared/ProtectedAccess';
 
 interface LocationData {
   name: string;
@@ -55,6 +57,7 @@ const availableEquipment = [
 export function BikeManagement() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { can } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [locationFilter, setLocationFilter] = useState('all');
@@ -429,15 +432,19 @@ export function BikeManagement() {
           <p className="text-gray-600">{t('bikes.monitoring')}</p>
         </div>
         <div className="flex gap-2">
-          <ExportButtons 
-            data={exportData} 
-            filename="velos"
-            headers={Object.keys(exportData[0] || {})}
-          />
-          <Button onClick={handleAddBike} aria-label={t('aria.add')}>
-            <Plus className="w-4 h-4 mr-2" />
-            {t('bikes.addNew')}
-          </Button>
+          {can.exportBikes() && (
+            <ExportButtons
+              data={exportData}
+              filename="velos"
+              headers={Object.keys(exportData[0] || {})}
+            />
+          )}
+          {can.createBike() && (
+            <Button onClick={handleAddBike} aria-label={t('aria.add')}>
+              <Plus className="w-4 h-4 mr-2" />
+              {t('bikes.addNew')}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -632,38 +639,44 @@ export function BikeManagement() {
             </div>
 
             <div className="mt-4 pt-4 border-t border-gray-100">
-              <div className="flex flex-col gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => navigate(`/admin/bikes/${bike.id}`)}
-                  className="w-full"
-                  aria-label={t('aria.viewDetails')}
-                >
-                  {t('common.viewDetails')}
-                </Button>
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/admin/bikes/${bike.id}`)}
+                className="w-full"
+                aria-label={t('aria.viewDetails')}
+              >
+                {t('common.viewDetails')}
+              </Button>
+              {(can.updateBike() || can.deleteBike()) && (
                 <div className="grid grid-cols-2 gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleEditBike(bike)}
-                    title={t('common.edit')}
-                    aria-label={t('aria.edit')}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDeleteBike(bike)}
-                    title={t('common.delete')}
-                    aria-label={t('aria.delete')}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  {can.updateBike() && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditBike(bike)}
+                      title={t('common.edit')}
+                      aria-label={t('aria.edit')}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  )}
+                  {can.deleteBike() && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteBike(bike)}
+                      title={t('common.delete')}
+                      aria-label={t('aria.delete')}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
-              </div>
+              )}
             </div>
+          </div>
           </Card>
         ))}
       </div>

@@ -281,6 +281,65 @@ export class AdminService {
     if (!response.success) throw new Error(response.error || 'Erreur lors de la suppression de la promotion');
   }
 
+  /* Free Days Rules APIs */
+  async getFreeDaysRules(): Promise<any[]> {
+    const response = await apiClient.get<any[]>('/free-days');
+    if (!response.success || !response.data) throw new Error(response.error || 'Erreur lors de la récupération des règles de jours gratuits');
+    return response.data;
+  }
+
+  async getFreeDaysRuleById(id: string): Promise<any> {
+    const response = await apiClient.get<any>(`/free-days/${id}`);
+    if (!response.success || !response.data) throw new Error(response.error || 'Erreur lors de la récupération de la règle');
+    return response.data;
+  }
+
+  async createFreeDaysRule(data: {
+    name: string;
+    description?: string;
+    numberOfDays: number;
+    startType?: string;
+    targetType?: string;
+    targetDaysSinceRegistration?: number;
+    targetMinSpend?: number;
+    applyAfterSubscription?: boolean;
+    validFrom?: string;
+    validUntil?: string;
+    maxBeneficiaries?: number;
+  }): Promise<any> {
+    const response = await apiClient.post<any>('/free-days', data);
+    if (!response.success || !response.data) throw new Error(response.error || 'Erreur lors de la création de la règle');
+    return response.data;
+  }
+
+  async updateFreeDaysRule(id: string, data: any): Promise<any> {
+    const response = await apiClient.put<any>(`/free-days/${id}`, data);
+    if (!response.success || !response.data) throw new Error(response.error || 'Erreur lors de la mise à jour de la règle');
+    return response.data;
+  }
+
+  async deleteFreeDaysRule(id: string): Promise<void> {
+    const response = await apiClient.delete<void>(`/free-days/${id}`);
+    if (!response.success) throw new Error(response.error || 'Erreur lors de la suppression de la règle');
+  }
+
+  async addFreeDaysBeneficiary(ruleId: string, userId: string): Promise<any> {
+    const response = await apiClient.post<any>(`/free-days/${ruleId}/beneficiaries`, { userId });
+    if (!response.success || !response.data) throw new Error(response.error || 'Erreur lors de l\'ajout du bénéficiaire');
+    return response.data;
+  }
+
+  async removeFreeDaysBeneficiary(ruleId: string, userId: string): Promise<void> {
+    const response = await apiClient.delete<void>(`/free-days/${ruleId}/beneficiaries/${userId}`);
+    if (!response.success) throw new Error(response.error || 'Erreur lors de la suppression du bénéficiaire');
+  }
+
+  async searchFreeDaysUsers(query: string): Promise<any[]> {
+    const response = await apiClient.get<any[]>(`/free-days/users/search?q=${encodeURIComponent(query)}`);
+    if (!response.success || !response.data) throw new Error(response.error || 'Erreur lors de la recherche d\'utilisateurs');
+    return response.data;
+  }
+
   async getIncidents(params?: {
     page?: number;
     limit?: number;

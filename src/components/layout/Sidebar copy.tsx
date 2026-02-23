@@ -152,6 +152,13 @@ export function Sidebar({ isCollapsed, isMobileMenuOpen, onCloseMobileMenu }: Si
           action: 'read'
         },
         {
+          id: 'monitoring',
+          label: 'Monitoring',
+          path: '/admin/monitoring',
+          resource: 'monitoring',
+          action: 'read'
+        },
+        {
           id: 'settings',
           label: t('nav.settings'),
           path: '/admin/settings',

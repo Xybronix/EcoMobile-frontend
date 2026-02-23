@@ -133,6 +133,7 @@ export interface UpdateBikeData {
   latitude?: number;
   longitude?: number;
   locationName?: string;
+  gpsDeviceId?: string;
   maintenanceReason?: string;
   maintenanceDetails?: string;
   equipment?: string[];

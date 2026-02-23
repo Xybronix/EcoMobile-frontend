@@ -18,7 +18,7 @@ import { userService, type User } from '../../../services/api/user.service';
 export function UserManagement() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { hasPermission } = usePermissions();
+  const { hasPermission, can } = usePermissions();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -220,11 +220,13 @@ export function UserManagement() {
           <h1 className="text-2xl font-bold text-green-600">{t('users.management')}</h1>
           <p className="text-gray-600">{t('users.overview')}</p>
         </div>
-        <ExportButtons 
-          data={exportData} 
-          filename="utilisateurs"
-          headers={['Nom', 'Email', 'Téléphone', 'Solde', 'Total Dépensé', 'Trajets', 'Statut']}
-        />
+        {can.exportUsers() && (
+          <ExportButtons
+            data={exportData}
+            filename="utilisateurs"
+            headers={['Nom', 'Email', 'Téléphone', 'Solde', 'Total Dépensé', 'Trajets', 'Statut']}
+          />
+        )}
       </div>
 
       {/* Summary Cards */}
@@ -399,14 +401,22 @@ export function UserManagement() {
                         <AlertCircle className="w-4 h-4 text-yellow-600" aria-label={t('users.emailNotVerified') || 'Email non vérifié'} />
                       )}
                       {user.phoneVerified ? (
-                        <Phone className="w-4 h-4 text-green-600" title={t('users.phoneVerified') || 'Téléphone vérifié'} aria-label={t('users.phoneVerified') || 'Téléphone vérifié'} />
+                        <span aria-label={t('users.phoneVerified') || 'Téléphone vérifié'}>
+                          <Phone className="w-4 h-4 text-green-600" />
+                        </span>
                       ) : (
-                        <Phone className="w-4 h-4 text-gray-400" title={t('users.phoneNotVerified') || 'Téléphone non vérifié'} aria-label={t('users.phoneNotVerified') || 'Téléphone non vérifié'} />
+                        <span aria-label={t('users.phoneNotVerified') || 'Téléphone non vérifié'}>
+                          <Phone className="w-4 h-4 text-gray-400" />
+                        </span>
                       )}
                       {user.accountVerified ? (
-                        <Shield className="w-4 h-4 text-green-600" title={t('users.accountVerified') || 'Compte validé'} aria-label={t('users.accountVerified') || 'Compte validé'} />
+                        <span aria-label={t('users.accountVerified') || 'Compte validé'}>
+                          <Shield className="w-4 h-4 text-green-600" />
+                        </span>
                       ) : (
-                        <Shield className="w-4 h-4 text-yellow-600" title={t('users.accountPending') || 'Compte en attente'} aria-label={t('users.accountPending') || 'Compte en attente'} />
+                        <span aria-label={t('users.accountPending') || 'Compte en attente'}>
+                          <Shield className="w-4 h-4 text-yellow-600" />
+                        </span>
                       )}
                     </div>
                   </TableCell>
@@ -534,7 +544,7 @@ export function UserManagement() {
                         </div>
                         <div className="flex-1">
                           <p className="text-sm font-medium">{user.name}</p>
-                          <p className="text-xs text-gray-500">{t('users.tripsCount', { count: user.totalTrips || 0 })}</p>
+                          <p className="text-xs text-gray-500">{user.totalTrips || 0} trajet(s)</p>
                         </div>
                       </div>
                     ))
@@ -582,9 +592,9 @@ export function UserManagement() {
               {confirmDialog.type === 'block' ? (t('users.blockUser') || 'Bloquer l\'utilisateur') : (t('users.unblockUser') || 'Débloquer l\'utilisateur')}
             </DialogTitle>
             <DialogDescription>
-              {confirmDialog.type === 'block' 
-                ? t('users.blockUserConfirm', { name: confirmDialog.user?.name || 'cet utilisateur' })
-                : t('users.unblockUserConfirm', { name: confirmDialog.user?.name || 'cet utilisateur' })
+              {confirmDialog.type === 'block'
+                ? `Êtes-vous sûr de vouloir bloquer ${confirmDialog.user?.name || 'cet utilisateur'} ?`
+                : `Êtes-vous sûr de vouloir débloquer ${confirmDialog.user?.name || 'cet utilisateur'} ?`
               }
             </DialogDescription>
           </DialogHeader>

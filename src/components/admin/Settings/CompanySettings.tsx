@@ -8,12 +8,14 @@ import { Textarea } from '../../ui/textarea';
 import { companyService, CompanySettings as CompanySettingsType } from '../../../services/api/company.service';
 import { useTranslation } from '../../../lib/i18n';
 import { toast } from 'sonner';
+import { usePermissions } from '../../../hooks/usePermissions';
 
 export function CompanySettings() {
   const [settings, setSettings] = useState<CompanySettingsType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const { t } = useTranslation();
+  const { can } = usePermissions();
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -55,10 +57,12 @@ export function CompanySettings() {
           <h1 className="text-green-600">{t('settings.company')}</h1>
           <p className="text-gray-600">{t('settings.companyInfo')}</p>
         </div>
-        <Button onClick={handleSave} disabled={isSaving}>
-          <Save className="w-4 h-4 mr-2" />
-          {isSaving ? 'Enregistrement...' : t('common.save')}
-        </Button>
+        {can.updateSettings() && (
+          <Button onClick={handleSave} disabled={isSaving}>
+            <Save className="w-4 h-4 mr-2" />
+            {isSaving ? 'Enregistrement...' : t('common.save')}
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

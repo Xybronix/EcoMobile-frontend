@@ -20,7 +20,7 @@ import { walletService, type WalletTransaction, type TransactionFilters } from '
 export function WalletManagement() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { hasPermission } = usePermissions();
+  const { hasPermission, can } = usePermissions();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -367,11 +367,13 @@ export function WalletManagement() {
             <Filter className="w-4 h-4 mr-2" />
             {t('common.filters') || 'Filtres'}
           </Button>
-          <ExportButtons 
-            data={exportData} 
-            filename="transactions-portefeuilles"
-            headers={Object.keys(exportData[0] || {})}
-          />
+          {can.exportWallet() && (
+            <ExportButtons
+              data={exportData}
+              filename="transactions-portefeuilles"
+              headers={Object.keys(exportData[0] || {})}
+            />
+          )}
         </div>
       </div>
 
@@ -604,20 +606,22 @@ export function WalletManagement() {
                       )}
                       */}
 
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openActionDialog('validate', transaction)}
-                        disabled={actionLoading === transaction.id}
-                        aria-label={t('aria.validateTransaction') || 'Valider la transaction'}
-                        title={t('aria.validateTransaction') || 'Valider la transaction'}
-                      >
-                        {actionLoading === transaction.id ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        ) : (
-                          <CheckCircle className="w-4 h-4" />
-                        )}
-                      </Button>
+                      {transaction.type !== 'DAMAGE_CHARGE' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openActionDialog('validate', transaction)}
+                          disabled={actionLoading === transaction.id}
+                          aria-label={t('aria.validateTransaction') || 'Valider la transaction'}
+                          title={t('aria.validateTransaction') || 'Valider la transaction'}
+                        >
+                          {actionLoading === transaction.id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          ) : (
+                            <CheckCircle className="w-4 h-4" />
+                          )}
+                        </Button>
+                      )}
 
                       <ProtectedAccess 
                         mode="component" 

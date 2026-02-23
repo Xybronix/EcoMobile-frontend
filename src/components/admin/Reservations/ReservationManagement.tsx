@@ -9,9 +9,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { reservationService } from '../../../services/api/reservation.service';
 import { toast } from 'sonner';
 import { useTranslation } from '../../../lib/i18n';
+import { usePermissions } from '../../../hooks/usePermissions';
+import { ExportButtons } from '../ExportButtons';
 
 export function ReservationManagement() {
   const { t } = useTranslation();
+  const { can } = usePermissions();
   const [reservations, setReservations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -75,9 +78,26 @@ export function ReservationManagement() {
 
   return (
     <div className="p-4 md:p-8 space-y-6">
-      <div>
-        <h1 className="text-green-600">{t('reservations.management') || 'Gestion des Réservations'}</h1>
-        <p className="text-gray-600">{t('reservations.overview') || 'Suivi et gestion des réservations de vélos'}</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-green-600">{t('reservations.management') || 'Gestion des Réservations'}</h1>
+          <p className="text-gray-600">{t('reservations.overview') || 'Suivi et gestion des réservations de vélos'}</p>
+        </div>
+        {can.exportReservations() && (
+          <ExportButtons
+            data={filteredReservations.map(r => ({
+              Utilisateur: `${r.user?.firstName || ''} ${r.user?.lastName || ''}`.trim(),
+              Email: r.user?.email || '',
+              Plan: r.plan?.name || '',
+              'Type de forfait': r.packageType || '',
+              Statut: r.status,
+              'Date début': new Date(r.startDate).toLocaleDateString('fr-FR'),
+              'Date fin': new Date(r.endDate).toLocaleDateString('fr-FR'),
+            }))}
+            filename="reservations"
+            headers={['Utilisateur', 'Email', 'Plan', 'Type de forfait', 'Statut', 'Date début', 'Date fin']}
+          />
+        )}
       </div>
 
       {/* Summary Cards */}

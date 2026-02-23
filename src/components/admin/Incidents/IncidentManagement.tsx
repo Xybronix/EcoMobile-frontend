@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, Search, Check, X, Clock, Eye } from 'lucide-react';
+import { AlertTriangle, Search, Check, X, Clock, Eye, Download } from 'lucide-react';
 import { Card } from '../../ui/card';
 import { Input } from '../../ui/input';
 import { Badge } from '../../ui/badge';
@@ -10,9 +10,12 @@ import { Textarea } from '../../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { toast } from 'sonner';
 import { useTranslation } from '../../../lib/i18n';
+import { usePermissions } from '../../../hooks/usePermissions';
+import { ExportButtons } from '../ExportButtons';
 
 export function IncidentManagement() {
   const { t } = useTranslation();
+  const { can } = usePermissions();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -149,9 +152,26 @@ export function IncidentManagement() {
 
   return (
     <div className="p-4 md:p-8 space-y-6">
-      <div>
-        <h1 className="text-green-600">{t('incidents.management') || 'Gestion des Signalements'}</h1>
-        <p className="text-gray-600">{t('incidents.overview') || 'Traitement des incidents et remboursements'}</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-green-600">{t('incidents.management') || 'Gestion des Signalements'}</h1>
+          <p className="text-gray-600">{t('incidents.overview') || 'Traitement des incidents et remboursements'}</p>
+        </div>
+        {can.exportIncidents() && (
+          <ExportButtons
+            data={incidents.map(i => ({
+              Utilisateur: i.userName || '',
+              Vélo: i.bikeName || '',
+              Type: i.type,
+              Statut: i.status,
+              Description: i.description,
+              'Remboursement (FCFA)': i.refundAmount || 0,
+              Date: new Date(i.createdAt).toLocaleDateString('fr-FR')
+            }))}
+            filename="incidents"
+            headers={['Utilisateur', 'Vélo', 'Type', 'Statut', 'Description', 'Remboursement (FCFA)', 'Date']}
+          />
+        )}
       </div>
 
       {/* Summary Cards */}
@@ -274,7 +294,7 @@ export function IncidentManagement() {
                   <Eye className="w-4 h-4 mr-2" />
                   {t('common.viewDetails')}
                 </Button>
-                {incident.status === 'OPEN' && (
+                {incident.status === 'OPEN' && can.resolveIncident() && (
                   <Button
                     variant="default"
                     size="sm"

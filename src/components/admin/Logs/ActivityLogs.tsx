@@ -10,8 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { logService, ActivityLog } from '../../../services/api/log.service';
 import { userService } from '../../../services/api/user.service';
 import { toast } from 'sonner';
+import { usePermissions } from '../../../hooks/usePermissions';
+import { ExportButtons } from '../ExportButtons';
 
 export function ActivityLogs() {
+  const { can } = usePermissions();
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [search, setSearch] = useState('');
@@ -145,9 +148,25 @@ export function ActivityLogs() {
 
   return (
     <div className="p-4 md:p-8 space-y-6">
-      <div>
-        <h1 className="text-green-600">{t('logs.activity')}</h1>
-        <p className="text-gray-600">{t('logs.overview')}</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-green-600">{t('logs.activity')}</h1>
+          <p className="text-gray-600">{t('logs.overview')}</p>
+        </div>
+        {can.exportLogs() && (
+          <ExportButtons
+            data={logs.map(log => ({
+              Utilisateur: log.userId || 'Système',
+              Action: log.action,
+              Ressource: log.resource,
+              Détails: log.details || '',
+              'Adresse IP': log.ipAddress || '',
+              Date: new Date(log.createdAt).toLocaleString('fr-FR')
+            }))}
+            filename="journaux-activite"
+            headers={['Utilisateur', 'Action', 'Ressource', 'Détails', 'Adresse IP', 'Date']}
+          />
+        )}
       </div>
 
       {/* Stats */}

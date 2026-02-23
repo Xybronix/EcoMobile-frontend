@@ -67,7 +67,7 @@ export function AdminTopBar({ onToggleSidebar, onToggleMobileMenu }: AdminTopBar
           {/* Bouton menu mobile - visible uniquement sur mobile */}
           <button
             onClick={onToggleMobileMenu}
-            className="md:hidden flex p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="lg:hidden flex p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             aria-label={t('aria.toggleMenu')}
           >
             <Menu className="w-5 h-5" />

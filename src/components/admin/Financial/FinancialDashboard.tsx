@@ -12,9 +12,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { financialService } from '../../../services/api/financial.service';
+import { usePermissions } from '../../../hooks/usePermissions';
 
 export function FinancialDashboard() {
   const { t } = useTranslation();
+  const { can } = usePermissions();
   
   // États des filtres
   const [showFilters, setShowFilters] = useState(false);
@@ -277,10 +279,12 @@ export function FinancialDashboard() {
           <p className="text-gray-600">{t('financial.analysis') || 'Analyses des revenus et performances financières'}</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleExport} className="gap-2" aria-label={t('aria.exportData') || 'Exporter les données'} title={t('aria.exportData') || 'Exporter les données'}>
-            <i className="w-4 h-4" />
-            {t('financial.export') || 'Exporter'}
-          </Button>
+          {can.exportWallet() && (
+            <Button onClick={handleExport} className="gap-2" aria-label={t('aria.exportData') || 'Exporter les données'} title={t('aria.exportData') || 'Exporter les données'}>
+              <i className="w-4 h-4" />
+              {t('financial.export') || 'Exporter'}
+            </Button>
+          )}
           <Button
             variant={showFilters ? "default" : "outline"}
             onClick={() => setShowFilters(!showFilters)}

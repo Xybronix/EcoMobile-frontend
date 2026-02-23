@@ -86,7 +86,7 @@ export default function App() {
               
               
               {/* Employee Management */}
-              <Route path="employees" element={<ProtectedAccess mode="route" requiredRole="SUPER_ADMIN"><EmployeeManagement /></ProtectedAccess>} />
+              <Route path="employees" element={<ProtectedAccess mode="route" resource="employees" action="read"><EmployeeManagement /></ProtectedAccess>} />
               <Route path="roles" element={<ProtectedAccess mode="route" resource="roles" action="read"><RolesManagement /></ProtectedAccess>} />
               
               {/* Activity Logs */}

@@ -11,8 +11,11 @@ import { Textarea } from '../../ui/textarea';
 import { Label } from '../../ui/label';
 import { toast } from 'sonner';
 import { Pagination } from '../../Pagination';
+import { usePermissions } from '../../../hooks/usePermissions';
+import { ExportButtons } from '../ExportButtons';
 
 export function ReviewManagement() {
+  const { can } = usePermissions();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [allReviews, setAllReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -291,10 +294,27 @@ export function ReviewManagement() {
           <h1 className="text-2xl font-bold text-green-600">Gestion des avis</h1>
           <p className="text-gray-600">Consultez, modérez et gérez les avis des utilisateurs</p>
         </div>
-        <Button onClick={() => openReviewDialog('create')}>
-          <Plus className="w-4 h-4 mr-2" />
-          Créer un avis
-        </Button>
+        <div className="flex gap-2">
+          {can.exportReviews() && (
+            <ExportButtons
+              data={allReviews.map(r => ({
+                Utilisateur: `${r.firstName || ''} ${r.lastName || ''}`.trim(),
+                Note: r.rating,
+                Commentaire: r.comment,
+                Statut: r.status,
+                Date: new Date(r.createdAt).toLocaleDateString('fr-FR')
+              }))}
+              filename="avis"
+              headers={['Utilisateur', 'Note', 'Commentaire', 'Statut', 'Date']}
+            />
+          )}
+          {can.createReview() && (
+            <Button onClick={() => openReviewDialog('create')}>
+              <Plus className="w-4 h-4 mr-2" />
+              Créer un avis
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -423,13 +443,14 @@ export function ReviewManagement() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-center gap-2">
-                      {/* Boutons de modération - TOUJOURS visibles pour changer le statut à tout moment */}
-                      {review.status !== 'APPROVED' && (
+                      {/* Boutons de modération */}
+                      {can.moderateReview() && review.status !== 'APPROVED' && (
                         <Button
                           onClick={() => openConfirmDialog('approve', review)}
                           className="bg-green-600 hover:bg-green-700"
                           size="sm"
                           disabled={actionLoading === review.id}
+                          title="Approuver"
                         >
                           {actionLoading === review.id ? (
                             <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
@@ -439,12 +460,13 @@ export function ReviewManagement() {
                         </Button>
                       )}
                       
-                      {review.status !== 'REJECTED' && (
+                      {can.moderateReview() && review.status !== 'REJECTED' && (
                         <Button
                           onClick={() => openConfirmDialog('reject', review)}
                           variant="outline"
                           size="sm"
                           disabled={actionLoading === review.id}
+                          title="Rejeter"
                         >
                           {actionLoading === review.id ? (
                             <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-400"></div>
@@ -455,29 +477,35 @@ export function ReviewManagement() {
                       )}
 
                       {/* Bouton d'édition */}
-                      <Button
-                        onClick={() => openReviewDialog('edit', review)}
-                        variant="outline"
-                        size="sm"
-                        disabled={actionLoading === review.id}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
+                      {can.updateReview() && (
+                        <Button
+                          onClick={() => openReviewDialog('edit', review)}
+                          variant="outline"
+                          size="sm"
+                          disabled={actionLoading === review.id}
+                          title="Modifier"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      )}
                       
                       {/* Bouton de suppression */}
-                      <Button
-                        onClick={() => openConfirmDialog('delete', review)}
-                        variant="outline"
-                        size="sm"
-                        className="text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50"
-                        disabled={actionLoading === review.id}
-                      >
-                        {actionLoading === review.id ? (
-                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-600"></div>
-                        ) : (
-                          <Trash2 className="w-4 h-4" />
-                        )}
-                      </Button>
+                      {can.deleteReview() && (
+                        <Button
+                          onClick={() => openConfirmDialog('delete', review)}
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50"
+                          disabled={actionLoading === review.id}
+                          title="Supprimer"
+                        >
+                          {actionLoading === review.id ? (
+                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-600"></div>
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

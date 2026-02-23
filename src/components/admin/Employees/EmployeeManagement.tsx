@@ -14,6 +14,7 @@ import { rolesService, Role } from '../../../services/api/roles.service';
 import { useTranslation } from '../../../lib/i18n';
 import { toast } from 'sonner';
 import { ExportButtons } from '../ExportButtons';
+import { usePermissions } from '../../../hooks/usePermissions';
 
 interface EmployeeFormData {
   name: string;
@@ -28,6 +29,7 @@ export function EmployeeManagement() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const { t } = useTranslation();
+  const { can } = usePermissions();
   const [currentPage, setCurrentPage] = useState(1);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -316,15 +318,19 @@ export function EmployeeManagement() {
           <p className="text-gray-600">{t('employees.overview')}</p>
         </div>
         <div className="flex gap-2">
-          <ExportButtons 
-            data={exportData} 
-            filename="employes"
-            headers={['Nom', 'Email', 'Téléphone', 'Rôle', 'Date d\'embauche', 'Statut']}
-          />
-          <Button onClick={handleAdd}>
-            <Plus className="w-4 h-4 mr-2" />
-            {t('employees.addNew')}
-          </Button>
+          {can.viewEmployees() && (
+            <ExportButtons
+              data={exportData}
+              filename="employes"
+              headers={['Nom', 'Email', 'Téléphone', 'Rôle', 'Date d\'embauche', 'Statut']}
+            />
+          )}
+          {can.createEmployee() && (
+            <Button onClick={handleAdd}>
+              <Plus className="w-4 h-4 mr-2" />
+              {t('employees.addNew')}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -435,36 +441,42 @@ export function EmployeeManagement() {
                     <Button variant="outline" size="sm" onClick={() => handleView(emp)} title={t('common.view')}>
                       <Eye className="w-4 h-4" />
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(emp)} title={t('common.edit')}>
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    {emp.status === 'active' ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleBlock(emp.id, emp.name)}
-                        title={t('common.block')}
-                      >
-                        <Ban className="w-4 h-4" />
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleUnblock(emp.id, emp.name)}
-                        title={t('common.unblock')}
-                      >
-                        <CheckCircle className="w-4 h-4" />
+                    {can.updateEmployee() && (
+                      <Button variant="outline" size="sm" onClick={() => handleEdit(emp)} title={t('common.edit')}>
+                        <Edit className="w-4 h-4" />
                       </Button>
                     )}
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(emp)}
-                      title={t('common.delete')}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    {can.updateEmployee() && (
+                      emp.status === 'active' ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleBlock(emp.id, emp.name)}
+                          title={t('common.block')}
+                        >
+                          <Ban className="w-4 h-4" />
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleUnblock(emp.id, emp.name)}
+                          title={t('common.unblock')}
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                        </Button>
+                      )
+                    )}
+                    {can.deleteEmployee() && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(emp)}
+                        title={t('common.delete')}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>
