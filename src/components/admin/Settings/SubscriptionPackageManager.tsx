@@ -130,11 +130,11 @@ export function SubscriptionPackageManager() {
     name: '',
     description: '',
     numberOfDays: 1,
-    startType: 'ON_USE',
     targetType: 'NEW_USERS',
     targetDaysSinceRegistration: undefined as number | undefined,
     targetMinSpend: undefined as number | undefined,
-    applyAfterSubscription: false,
+    startHour: undefined as number | undefined,
+    endHour: undefined as number | undefined,
     validFrom: '',
     validUntil: '',
     maxBeneficiaries: undefined as number | undefined
@@ -360,7 +360,8 @@ export function SubscriptionPackageManager() {
         targetType: 'NEW_USERS',
         targetDaysSinceRegistration: undefined,
         targetMinSpend: undefined,
-        applyAfterSubscription: false,
+        startHour: undefined,
+        endHour: undefined,
         validFrom: '',
         validUntil: '',
         maxBeneficiaries: undefined
@@ -972,11 +973,6 @@ export function SubscriptionPackageManager() {
                         {rule.numberOfDays} {language === 'fr' ? 'jours' : 'days'}
                       </Badge>
                       <Badge variant="outline">
-                        {rule.startType === 'IMMEDIATE' 
-                          ? (language === 'fr' ? 'Immédiat' : 'Immediate') 
-                          : (language === 'fr' ? 'À l\'utilisation' : 'On use')}
-                      </Badge>
-                      <Badge variant="outline">
                         {rule.targetType === 'NEW_USERS' 
                           ? (language === 'fr' ? 'Nouveaux utilisateurs' : 'New users') 
                           : rule.targetType === 'MANUAL' 
@@ -1006,11 +1002,11 @@ export function SubscriptionPackageManager() {
                             name: rule.name,
                             description: rule.description || '',
                             numberOfDays: rule.numberOfDays,
-                            startType: rule.startType,
                             targetType: rule.targetType,
                             targetDaysSinceRegistration: rule.targetDaysSinceRegistration || undefined,
                             targetMinSpend: rule.targetMinSpend || undefined,
-                            applyAfterSubscription: rule.applyAfterSubscription,
+                            startHour: rule.startHour ?? undefined,
+                            endHour: rule.endHour ?? undefined,
                             validFrom: rule.validFrom ? new Date(rule.validFrom).toISOString().split('T')[0] : '',
                             validUntil: rule.validUntil ? new Date(rule.validUntil).toISOString().split('T')[0] : '',
                             maxBeneficiaries: rule.maxBeneficiaries || undefined
@@ -1541,25 +1537,6 @@ export function SubscriptionPackageManager() {
                 />
               </div>
 
-              <div>
-                <Label>{language === 'fr' ? 'Début' : 'Start'}</Label>
-                <Select 
-                  value={freeDaysRuleForm.startType} 
-                  onValueChange={(value) => setFreeDaysRuleForm({ ...freeDaysRuleForm, startType: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="IMMEDIATE">
-                      {language === 'fr' ? 'Immédiat' : 'Immediate'}
-                    </SelectItem>
-                    <SelectItem value="ON_USE">
-                      {language === 'fr' ? "À l'utilisation" : 'On use'}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
 
             <div>
@@ -1614,17 +1591,29 @@ export function SubscriptionPackageManager() {
               </div>
             )}
 
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={freeDaysRuleForm.applyAfterSubscription}
-                onCheckedChange={(checked: boolean) => setFreeDaysRuleForm({ ...freeDaysRuleForm, applyAfterSubscription: checked })}
-              />
-              <Label>
-                {language === 'fr' 
-                  ? 'Appliquer après l\'abonnement en cours (ou mettre en pause)' 
-                  : 'Apply after current subscription (or pause)'
-                }
-              </Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>{language === 'fr' ? 'Heure de début (0-23)' : 'Start Hour (0-23)'}</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="23"
+                  value={freeDaysRuleForm.startHour ?? ''}
+                  onChange={(e) => setFreeDaysRuleForm({ ...freeDaysRuleForm, startHour: e.target.value ? parseInt(e.target.value) : undefined })}
+                  placeholder={language === 'fr' ? 'Optionnel' : 'Optional'}
+                />
+              </div>
+              <div>
+                <Label>{language === 'fr' ? 'Heure de fin (0-23)' : 'End Hour (0-23)'}</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="23"
+                  value={freeDaysRuleForm.endHour ?? ''}
+                  onChange={(e) => setFreeDaysRuleForm({ ...freeDaysRuleForm, endHour: e.target.value ? parseInt(e.target.value) : undefined })}
+                  placeholder={language === 'fr' ? 'Optionnel' : 'Optional'}
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
