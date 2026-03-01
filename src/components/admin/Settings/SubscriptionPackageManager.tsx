@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, X, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Check, ChevronDown, ChevronUp, Clock, Eye, EyeOff } from 'lucide-react';
 import { Card } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
@@ -12,9 +12,12 @@ import { Textarea } from '../../ui/textarea';
 import { toast } from 'sonner';
 import { useTranslation } from '../../../lib/i18n';
 import { adminService } from '../../../services/api/admin.service';
+import { companyService, PricingPlan, PricingRule, PricingConfig as PricingConfigType } from '../../../services/api/company.service';
+import { usePermissions } from '../../../hooks/usePermissions';
 
 export function SubscriptionPackageManager() {
   const { t, language } = useTranslation();
+  const { can } = usePermissions();
   const [packages, setPackages] = useState<any[]>([]);
   const [isLoadingPackages, setIsLoadingPackages] = useState(true);
   const [isAddingPackage, setIsAddingPackage] = useState(false);
@@ -42,7 +45,53 @@ export function SubscriptionPackageManager() {
   const [expandedFreeDaysRuleId, setExpandedFreeDaysRuleId] = useState<string | null>(null);
   const [userSearchResults, setUserSearchResults] = useState<any[]>([]);
   const [userSearchQuery, setUserSearchQuery] = useState('');
-  
+
+  // PricingConfig states (plans, rules, hourly rate)
+  const [pricingConfig, setPricingConfig] = useState<PricingConfigType | null>(null);
+  const [isLoadingPricing, setIsLoadingPricing] = useState(true);
+  const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
+  const [selectedRule, setSelectedRule] = useState<PricingRule | null>(null);
+  const [isEditingPlan, setIsEditingPlan] = useState(false);
+  const [isAddingNewPlan, setIsAddingNewPlan] = useState(false);
+  const [isEditingRule, setIsEditingRule] = useState(false);
+  const [isAddingNewRule, setIsAddingNewRule] = useState(false);
+  const [isDeletingPlan, setIsDeletingPlan] = useState<string | null>(null);
+  const [isDeletingRule, setIsDeletingRule] = useState<string | null>(null);
+  const [editedHourlyPricing, setEditedHourlyPricing] = useState({ unlockFee: 0, baseHourlyRate: 0 });
+  const [editedPlan, setEditedPlan] = useState({
+    name: '',
+    hourlyRate: 0,
+    dailyRate: 0,
+    weeklyRate: 0,
+    monthlyRate: 0,
+    minimumHours: 1,
+    discount: 0,
+    isActive: true,
+    conditions: [] as string[],
+    hasOverride: false,
+    overTimeType: 'PERCENTAGE_REDUCTION' as 'FIXED_PRICE' | 'PERCENTAGE_REDUCTION',
+    overTimeValue: 0,
+    hourlyStartHour: null as number | null,
+    hourlyEndHour: null as number | null,
+    dailyStartHour: null as number | null,
+    dailyEndHour: null as number | null,
+    weeklyStartHour: null as number | null,
+    weeklyEndHour: null as number | null,
+    monthlyStartHour: null as number | null,
+    monthlyEndHour: null as number | null
+  });
+  const [editedRule, setEditedRule] = useState({
+    name: '',
+    dayOfWeek: null as number | null,
+    startHour: null as number | null,
+    endHour: null as number | null,
+    multiplier: 1,
+    isActive: true,
+    priority: 0
+  });
+  const [pricingFormErrors, setPricingFormErrors] = useState<{ planName?: string; multiplier?: string }>({});
+  const [isEditingHourlyPricing, setIsEditingHourlyPricing] = useState(false);
+
   // Confirmation states
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'package' | 'formula' | 'promotion'; id: string; name: string } | null>(null);
 
@@ -95,6 +144,7 @@ export function SubscriptionPackageManager() {
     loadPackages();
     loadPromotions();
     loadFreeDaysRules();
+    loadPricing();
   }, []);
 
   const loadPackages = async () => {
@@ -348,9 +398,11 @@ export function SubscriptionPackageManager() {
     try {
       await adminService.addFreeDaysBeneficiary(ruleId, userId);
       toast.success('Bénéficiaire ajouté');
-      await loadFreeDaysRules();
       setUserSearchResults([]);
       setUserSearchQuery('');
+      // Refresh the expanded rule's beneficiaries
+      const detailed = await adminService.getFreeDaysRuleById(ruleId);
+      setFreeDaysRules(prev => prev.map(r => r.id === ruleId ? { ...r, beneficiaries: detailed.beneficiaries } : r));
     } catch (error: any) {
       toast.error(error?.message || 'Erreur lors de l\'ajout du bénéficiaire');
     }
@@ -360,11 +412,184 @@ export function SubscriptionPackageManager() {
     try {
       await adminService.removeFreeDaysBeneficiary(ruleId, userId);
       toast.success('Bénéficiaire supprimé');
-      await loadFreeDaysRules();
+      // Refresh the expanded rule's beneficiaries
+      const detailed = await adminService.getFreeDaysRuleById(ruleId);
+      setFreeDaysRules(prev => prev.map(r => r.id === ruleId ? { ...r, beneficiaries: detailed.beneficiaries } : r));
     } catch (error: any) {
       toast.error(error?.message || 'Erreur lors de la suppression du bénéficiaire');
     }
   };
+
+  const handleExpandFreeDaysRule = async (ruleId: string) => {
+    if (expandedFreeDaysRuleId === ruleId) {
+      setExpandedFreeDaysRuleId(null);
+      return;
+    }
+    setExpandedFreeDaysRuleId(ruleId);
+    try {
+      const detailed = await adminService.getFreeDaysRuleById(ruleId);
+      setFreeDaysRules(prev => prev.map(r => r.id === ruleId ? { ...r, beneficiaries: detailed.beneficiaries } : r));
+    } catch {
+      // silently ignore — beneficiaries list stays empty
+    }
+  };
+
+  // ── PricingConfig handlers ──────────────────────────────────────────────
+
+  const loadPricing = async () => {
+    try {
+      setIsLoadingPricing(true);
+      const data = await companyService.getPricing();
+      setPricingConfig(data);
+      setEditedHourlyPricing({ unlockFee: data.unlockFee || 0, baseHourlyRate: data.baseHourlyRate || 0 });
+    } catch (error: any) {
+      toast.error(error?.message || 'Erreur lors du chargement de la tarification');
+    } finally {
+      setIsLoadingPricing(false);
+    }
+  };
+
+  const handleSaveHourlyPricing = async () => {
+    try {
+      await companyService.updatePricing({ ...pricingConfig, unlockFee: editedHourlyPricing.unlockFee, baseHourlyRate: editedHourlyPricing.baseHourlyRate });
+      const data = await companyService.getPricing();
+      setPricingConfig(data);
+      toast.success(language === 'fr' ? 'Tarification à l\'heure mise à jour' : 'Hourly pricing updated');
+    } catch (error: any) {
+      toast.error(error?.message || 'Erreur lors de la mise à jour');
+    }
+  };
+
+  const handleAddNewPlan = () => {
+    setEditedPlan({ name: '', hourlyRate: 0, dailyRate: 0, weeklyRate: 0, monthlyRate: 0, minimumHours: 1, discount: 0, isActive: true, conditions: [], hasOverride: false, overTimeType: 'PERCENTAGE_REDUCTION', overTimeValue: 0, hourlyStartHour: null, hourlyEndHour: null, dailyStartHour: null, dailyEndHour: null, weeklyStartHour: null, weeklyEndHour: null, monthlyStartHour: null, monthlyEndHour: null });
+    setPricingFormErrors({});
+    setIsAddingNewPlan(true);
+  };
+
+  const handleEditPlan = (plan: PricingPlan) => {
+    setSelectedPlan(plan);
+    const override = plan.override;
+    setEditedPlan({
+      name: plan.name, hourlyRate: plan.hourlyRate, dailyRate: plan.dailyRate, weeklyRate: plan.weeklyRate, monthlyRate: plan.monthlyRate, minimumHours: plan.minimumHours, discount: plan.discount, isActive: plan.isActive, conditions: plan.conditions || [],
+      hasOverride: !!override, overTimeType: override?.overTimeType || 'PERCENTAGE_REDUCTION', overTimeValue: override?.overTimeValue || 0,
+      hourlyStartHour: override?.hourlyStartHour ?? null, hourlyEndHour: override?.hourlyEndHour ?? null,
+      dailyStartHour: override?.dailyStartHour ?? null, dailyEndHour: override?.dailyEndHour ?? null,
+      weeklyStartHour: override?.weeklyStartHour ?? null, weeklyEndHour: override?.weeklyEndHour ?? null,
+      monthlyStartHour: override?.monthlyStartHour ?? null, monthlyEndHour: override?.monthlyEndHour ?? null
+    });
+    setPricingFormErrors({});
+    setIsEditingPlan(true);
+  };
+
+  const handleSavePlan = async () => {
+    if (!editedPlan.name.trim()) { setPricingFormErrors({ planName: 'Le nom est requis' }); return; }
+    setPricingFormErrors({});
+    const planData = { name: editedPlan.name, hourlyRate: editedPlan.hourlyRate, dailyRate: editedPlan.dailyRate, weeklyRate: editedPlan.weeklyRate, monthlyRate: editedPlan.monthlyRate, minimumHours: editedPlan.minimumHours, discount: editedPlan.discount, isActive: editedPlan.isActive, conditions: editedPlan.conditions };
+    try {
+      let planId: string | undefined;
+      if (isAddingNewPlan) {
+        const res = await companyService.createPlan(planData);
+        planId = res.data.id;
+        toast.success(`Plan "${editedPlan.name}" créé`);
+      } else {
+        const updatedPlans = (pricingConfig?.plans || []).map(p => p.id === selectedPlan?.id ? { ...p, ...planData, id: selectedPlan!.id } : p);
+        await companyService.updatePricing({ ...pricingConfig, plans: updatedPlans });
+        planId = selectedPlan?.id;
+        toast.success(`Plan "${editedPlan.name}" mis à jour`);
+      }
+      if (planId) {
+        if (editedPlan.hasOverride && editedPlan.overTimeValue > 0) {
+          try {
+            await companyService.createPlanOverride(planId, editedPlan.overTimeType, editedPlan.overTimeValue, { hourlyStartHour: editedPlan.hourlyStartHour, hourlyEndHour: editedPlan.hourlyEndHour, dailyStartHour: editedPlan.dailyStartHour, dailyEndHour: editedPlan.dailyEndHour, weeklyStartHour: editedPlan.weeklyStartHour, weeklyEndHour: editedPlan.weeklyEndHour, monthlyStartHour: editedPlan.monthlyStartHour, monthlyEndHour: editedPlan.monthlyEndHour });
+          } catch { toast.error('Erreur lors de la configuration overtime'); }
+        } else {
+          try { await companyService.deletePlanOverride(planId); } catch {}
+        }
+      }
+      await loadPricing();
+      setIsEditingPlan(false); setIsAddingNewPlan(false); setSelectedPlan(null);
+    } catch (error: any) {
+      toast.error(error?.message || 'Erreur lors de la sauvegarde du plan');
+    }
+  };
+
+  const handleDeletePlan = async (planId: string) => {
+    try {
+      await companyService.deletePlan(planId);
+      await loadPricing();
+      setIsDeletingPlan(null);
+      toast.success('Plan supprimé');
+    } catch (error: any) {
+      toast.error(error?.message || 'Erreur lors de la suppression du plan');
+    }
+  };
+
+  const handleTogglePlanStatus = async (plan: PricingPlan) => {
+    try {
+      const updatedPlans = (pricingConfig?.plans || []).map(p => p.id === plan.id ? { ...p, isActive: !p.isActive } : p);
+      await companyService.updatePricing({ ...pricingConfig, plans: updatedPlans });
+      await loadPricing();
+      toast.success(`Plan ${!plan.isActive ? 'activé' : 'désactivé'}`);
+    } catch (error: any) { toast.error(error?.message || 'Erreur'); }
+  };
+
+  const handleAddNewRule = () => {
+    setEditedRule({ name: '', dayOfWeek: null, startHour: null, endHour: null, multiplier: 1, isActive: true, priority: 0 });
+    setPricingFormErrors({});
+    setIsAddingNewRule(true);
+  };
+
+  const handleEditRule = (rule: PricingRule) => {
+    setSelectedRule(rule);
+    setEditedRule({ name: rule.name, dayOfWeek: rule.dayOfWeek ?? null, startHour: rule.startHour ?? null, endHour: rule.endHour ?? null, multiplier: rule.multiplier, isActive: rule.isActive, priority: rule.priority });
+    setPricingFormErrors({});
+    setIsEditingRule(true);
+  };
+
+  const handleSaveRule = async () => {
+    if (!editedRule.name.trim()) { setPricingFormErrors({ planName: 'Le nom est requis' }); return; }
+    if (editedRule.multiplier <= 0) { setPricingFormErrors({ multiplier: 'Le multiplicateur doit être > 0' }); return; }
+    setPricingFormErrors({});
+    try {
+      const updatedRules = (isAddingNewRule
+        ? [...(pricingConfig?.rules || []), { ...editedRule, id: Date.now().toString(), dayOfWeek: editedRule.dayOfWeek ?? undefined, startHour: editedRule.startHour ?? undefined, endHour: editedRule.endHour ?? undefined }]
+        : (pricingConfig?.rules || []).map(r => r.id === selectedRule?.id ? { ...editedRule, id: selectedRule!.id, dayOfWeek: editedRule.dayOfWeek ?? undefined, startHour: editedRule.startHour ?? undefined, endHour: editedRule.endHour ?? undefined } : r)
+      ) as PricingRule[];
+      await companyService.updatePricing({ ...pricingConfig, rules: updatedRules });
+      await loadPricing();
+      toast.success(isAddingNewRule ? `Règle "${editedRule.name}" créée` : `Règle "${editedRule.name}" mise à jour`);
+      setIsEditingRule(false); setIsAddingNewRule(false); setSelectedRule(null);
+    } catch (error: any) { toast.error(error?.message || 'Erreur lors de la sauvegarde'); }
+  };
+
+  const handleDeleteRule = async (ruleId: string) => {
+    try {
+      await companyService.deleteRule(ruleId);
+      await loadPricing();
+      setIsDeletingRule(null);
+      toast.success('Règle supprimée');
+    } catch (error: any) { toast.error(error?.message || 'Erreur lors de la suppression'); }
+  };
+
+  const handleToggleRuleStatus = async (rule: PricingRule) => {
+    try {
+      const updatedRules = (pricingConfig?.rules || []).map(r => r.id === rule.id ? { ...r, isActive: !r.isActive } : r);
+      await companyService.updatePricing({ ...pricingConfig, rules: updatedRules });
+      await loadPricing();
+      toast.success(`Règle ${!rule.isActive ? 'activée' : 'désactivée'}`);
+    } catch (error: any) { toast.error(error?.message || 'Erreur'); }
+  };
+
+  const daysOfWeek = [
+    { value: null, label: language === 'fr' ? 'Tous les jours' : 'All days' },
+    { value: 0, label: language === 'fr' ? 'Dimanche' : 'Sunday' },
+    { value: 1, label: language === 'fr' ? 'Lundi' : 'Monday' },
+    { value: 2, label: language === 'fr' ? 'Mardi' : 'Tuesday' },
+    { value: 3, label: language === 'fr' ? 'Mercredi' : 'Wednesday' },
+    { value: 4, label: language === 'fr' ? 'Jeudi' : 'Thursday' },
+    { value: 5, label: language === 'fr' ? 'Vendredi' : 'Friday' },
+    { value: 6, label: language === 'fr' ? 'Samedi' : 'Saturday' },
+  ];
 
   return (
     <div className="p-4 md:p-8 space-y-6">
@@ -379,40 +604,97 @@ export function SubscriptionPackageManager() {
         </p>
       </div>
 
+      {/* Tarification à l'heure */}
+      <Card className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">{language === 'fr' ? "Tarification à l'heure" : 'Hourly Pricing'}</h2>
+            <p className="text-sm text-gray-600">{language === 'fr' ? "Frais de déverrouillage et tarif horaire de base (sans abonnement)." : "Unlock fee and base hourly rate (without subscription)."}</p>
+          </div>
+          {can.updatePricing() && !isEditingHourlyPricing && (
+            <Button variant="outline" onClick={() => setIsEditingHourlyPricing(true)}>
+              <Edit className="w-4 h-4 mr-2" />{language === 'fr' ? 'Modifier' : 'Edit'}
+            </Button>
+          )}
+        </div>
+        {isEditingHourlyPricing ? (
+          <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <Label>{language === 'fr' ? 'Frais de déverrouillage (FCFA)' : 'Unlock fee (FCFA)'}</Label>
+                <Input type="number" min="0" value={editedHourlyPricing.unlockFee}
+                  onChange={(e) => setEditedHourlyPricing({ ...editedHourlyPricing, unlockFee: parseFloat(e.target.value) || 0 })} />
+              </div>
+              <div>
+                <Label>{language === 'fr' ? 'Tarif horaire de base (FCFA/h)' : 'Base hourly rate (FCFA/h)'}</Label>
+                <Input type="number" min="0" value={editedHourlyPricing.baseHourlyRate}
+                  onChange={(e) => setEditedHourlyPricing({ ...editedHourlyPricing, baseHourlyRate: parseFloat(e.target.value) || 0 })} />
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="outline" onClick={() => {
+                setIsEditingHourlyPricing(false);
+                setEditedHourlyPricing({ unlockFee: pricingConfig?.unlockFee || 0, baseHourlyRate: pricingConfig?.baseHourlyRate || 0 });
+              }}>
+                <X className="w-4 h-4 mr-2" />{language === 'fr' ? 'Annuler' : 'Cancel'}
+              </Button>
+              <Button className="bg-green-600 text-white hover:bg-green-700" onClick={async () => { await handleSaveHourlyPricing(); setIsEditingHourlyPricing(false); }}>
+                <Check className="w-4 h-4 mr-2" />{language === 'fr' ? 'Enregistrer' : 'Save'}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="text-sm text-gray-500 mb-1">{language === 'fr' ? 'Frais de déverrouillage' : 'Unlock fee'}</p>
+              <p className="text-2xl font-bold text-gray-900">{pricingConfig?.unlockFee ?? editedHourlyPricing.unlockFee} <span className="text-sm font-normal text-gray-500">FCFA</span></p>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="text-sm text-gray-500 mb-1">{language === 'fr' ? 'Tarif horaire de base' : 'Base hourly rate'}</p>
+              <p className="text-2xl font-bold text-gray-900">{pricingConfig?.baseHourlyRate ?? editedHourlyPricing.baseHourlyRate} <span className="text-sm font-normal text-gray-500">FCFA/h</span></p>
+            </div>
+          </div>
+        )}
+      </Card>
+
       {/* Add Package Button */}
-      <div className="flex justify-end">
-        <Button 
-          onClick={() => {
-            setIsAddingPackage(true);
-            setPackageForm({ name: '', description: '' });
-          }}
-          className="flex items-center gap-2 bg-green-600 text-white hover:bg-green-700"
-        >
-          <Plus className="w-4 h-4" />
-          {language === 'fr' ? 'Nouveau Forfait' : 'New Package'}
-        </Button>
-        <Button 
-          onClick={() => {
-            setIsAddingFreeDaysRule(true);
-            setFreeDaysRuleForm({
-              name: '',
-              description: '',
-              numberOfDays: 1,
-              startType: 'ON_USE',
-              targetType: 'NEW_USERS',
-              targetDaysSinceRegistration: undefined,
-              targetMinSpend: undefined,
-              applyAfterSubscription: false,
-              validFrom: '',
-              validUntil: '',
-              maxBeneficiaries: undefined
-            });
-          }}
-          className="flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700"
-        >
-          <Plus className="w-4 h-4" />
-          {language === 'fr' ? 'Nouvelle Règle de Jours Gratuits' : 'New Free Days Rule'}
-        </Button>
+      <div className="flex justify-end gap-2">
+        {can.createPricing() && (
+          <Button
+            onClick={() => {
+              setIsAddingPackage(true);
+              setPackageForm({ name: '', description: '' });
+            }}
+            className="flex items-center gap-2 bg-green-600 text-white hover:bg-green-700"
+          >
+            <Plus className="w-4 h-4" />
+            {language === 'fr' ? 'Nouveau Forfait' : 'New Package'}
+          </Button>
+        )}
+        {can.manageFreeDays() && (
+          <Button
+            onClick={() => {
+              setIsAddingFreeDaysRule(true);
+              setFreeDaysRuleForm({
+                name: '',
+                description: '',
+                numberOfDays: 1,
+                startType: 'ON_USE',
+                targetType: 'NEW_USERS',
+                targetDaysSinceRegistration: undefined,
+                targetMinSpend: undefined,
+                applyAfterSubscription: false,
+                validFrom: '',
+                validUntil: '',
+                maxBeneficiaries: undefined
+              });
+            }}
+            className="flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700"
+          >
+            <Plus className="w-4 h-4" />
+            {language === 'fr' ? 'Nouvelle Règle de Jours Gratuits' : 'New Free Days Rule'}
+          </Button>
+        )}
       </div>
 
       {/* Packages List */}
@@ -439,28 +721,32 @@ export function SubscriptionPackageManager() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e: { stopPropagation: () => void; }) => {
-                      e.stopPropagation();
-                      setSelectedPackage(pkg);
-                      setPackageForm({ name: pkg.name, description: pkg.description });
-                      setIsEditingPackage(true);
-                    }}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e: { stopPropagation: () => void; }) => {
-                      e.stopPropagation();
-                      handleDeletePackage(pkg.id, pkg.name);
-                    }}
-                  >
-                    <Trash2 className="w-4 h-4 text-red-600" />
-                  </Button>
+                  {can.updatePricing() && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e: { stopPropagation: () => void; }) => {
+                        e.stopPropagation();
+                        setSelectedPackage(pkg);
+                        setPackageForm({ name: pkg.name, description: pkg.description });
+                        setIsEditingPackage(true);
+                      }}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  )}
+                  {can.deletePricing() && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e: { stopPropagation: () => void; }) => {
+                        e.stopPropagation();
+                        handleDeletePackage(pkg.id, pkg.name);
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4 text-red-600" />
+                    </Button>
+                  )}
                   {expandedPackageId === pkg.id ? (
                     <ChevronUp className="w-5 h-5 text-gray-400" />
                   ) : (
@@ -478,29 +764,31 @@ export function SubscriptionPackageManager() {
                       <h4 className="font-semibold text-gray-900">
                         {language === 'fr' ? 'Formules' : 'Formulas'}
                       </h4>
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          setSelectedPackage(pkg);
-                          setIsAddingFormula(true);
-                          setSelectedFormula(null);
-                          setFormulaForm({
-                            name: '',
-                            description: '',
-                            numberOfDays: 1,
-                            price: 0,
-                            dayStartHour: 0,
-                            dayEndHour: 23,
-                            chargeAfterHours: false,
-                            afterHoursPrice: 0,
-                            afterHoursType: 'FIXED_PRICE'
-                          });
-                        }}
-                        className="flex items-center gap-1"
-                      >
-                        <Plus className="w-3 h-3" />
-                        {language === 'fr' ? 'Ajouter' : 'Add'}
-                      </Button>
+                      {can.createPricing() && (
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            setSelectedPackage(pkg);
+                            setIsAddingFormula(true);
+                            setSelectedFormula(null);
+                            setFormulaForm({
+                              name: '',
+                              description: '',
+                              numberOfDays: 1,
+                              price: 0,
+                              dayStartHour: 0,
+                              dayEndHour: 23,
+                              chargeAfterHours: false,
+                              afterHoursPrice: 0,
+                              afterHoursType: 'FIXED_PRICE'
+                            });
+                          }}
+                          className="flex items-center gap-1"
+                        >
+                          <Plus className="w-3 h-3" />
+                          {language === 'fr' ? 'Ajouter' : 'Add'}
+                        </Button>
+                      )}
                     </div>
 
                     {pkg.formulas && pkg.formulas.length > 0 ? (
@@ -520,25 +808,29 @@ export function SubscriptionPackageManager() {
                                 </div>
                               </div>
                               <div className="flex gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedFormula(formula);
-                                    setFormulaForm(formula);
-                                    setIsEditingFormula(true);
-                                    setIsAddingFormula(true);
-                                  }}
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDeleteFormula(formula.id, formula.name)}
-                                >
-                                  <Trash2 className="w-4 h-4 text-red-600" />
-                                </Button>
+                                {can.updatePricing() && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedFormula(formula);
+                                      setFormulaForm(formula);
+                                      setIsEditingFormula(true);
+                                      setIsAddingFormula(true);
+                                    }}
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                )}
+                                {can.deletePricing() && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeleteFormula(formula.id, formula.name)}
+                                  >
+                                    <Trash2 className="w-4 h-4 text-red-600" />
+                                  </Button>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -557,35 +849,37 @@ export function SubscriptionPackageManager() {
                       <h4 className="font-semibold text-gray-900">
                         {language === 'fr' ? 'Promotions' : 'Promotions'}
                       </h4>
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          setSelectedPackage(pkg);
-                          setIsAddingPromotion(true);
-                          setIsEditingPromotion(false);
-                          setSelectedPromotion(null);
-                          setPromotionForm({
-                            name: '',
-                            description: '',
-                            discountType: 'PERCENTAGE',
-                            discountValue: 0,
-                            startDate: '',
-                            endDate: '',
-                            usageLimit: null,
-                            packageIds: [],
-                            formulaIds: []
-                          });
-                        }}
-                        className="flex items-center gap-1"
-                      >
-                        <Plus className="w-3 h-3" />
-                        {language === 'fr' ? 'Ajouter' : 'Add'}
-                      </Button>
+                      {can.createPricing() && (
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            setSelectedPackage(pkg);
+                            setIsAddingPromotion(true);
+                            setIsEditingPromotion(false);
+                            setSelectedPromotion(null);
+                            setPromotionForm({
+                              name: '',
+                              description: '',
+                              discountType: 'PERCENTAGE',
+                              discountValue: 0,
+                              startDate: '',
+                              endDate: '',
+                              usageLimit: null,
+                              packageIds: [],
+                              formulaIds: []
+                            });
+                          }}
+                          className="flex items-center gap-1"
+                        >
+                          <Plus className="w-3 h-3" />
+                          {language === 'fr' ? 'Ajouter' : 'Add'}
+                        </Button>
+                      )}
                     </div>
 
-                    {pkg.promotions && pkg.promotions.length > 0 ? (
+                    {promotions.filter(p => p.packageIds?.includes(pkg.id)).length > 0 ? (
                       <div className="space-y-2">
-                        {pkg.promotions.map((promo: any) => (
+                        {promotions.filter(p => p.packageIds?.includes(pkg.id)).map((promo: any) => (
                           <div key={promo.id} className="bg-white p-4 rounded-lg border border-gray-200">
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
@@ -596,26 +890,30 @@ export function SubscriptionPackageManager() {
                                 </div>
                               </div>
                               <div className="flex items-center gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedPromotion(promo);
-                                    setPromotionForm(promo);
-                                    setIsEditingPromotion(true);
-                                    setIsAddingPromotion(true);
-                                    setSelectedPackage(pkg);
-                                  }}
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDeletePromotion(promo.id, promo.name)}
-                                >
-                                  <Trash2 className="w-4 h-4 text-red-600" />
-                                </Button>
+                                {can.updatePricing() && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedPromotion(promo);
+                                      setPromotionForm(promo);
+                                      setIsEditingPromotion(true);
+                                      setIsAddingPromotion(true);
+                                      setSelectedPackage(pkg);
+                                    }}
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                )}
+                                {can.deletePricing() && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeletePromotion(promo.id, promo.name)}
+                                  >
+                                    <Trash2 className="w-4 h-4 text-red-600" />
+                                  </Button>
+                                )}
                                 <Badge variant={promo.isActive ? 'default' : 'secondary'}>
                                   {promo.isActive ? t('common.active') : t('common.inactive')}
                                 </Badge>
@@ -662,7 +960,7 @@ export function SubscriptionPackageManager() {
               <Card key={rule.id} className="overflow-hidden">
                 <div 
                   className="p-6 cursor-pointer hover:bg-gray-50 flex items-center justify-between"
-                  onClick={() => setExpandedFreeDaysRuleId(expandedFreeDaysRuleId === rule.id ? null : rule.id)}
+                  onClick={() => handleExpandFreeDaysRule(rule.id)}
                 >
                   <div className="flex-1">
                     <h3 className="text-lg font-bold text-gray-900">{rule.name}</h3>
@@ -697,41 +995,45 @@ export function SubscriptionPackageManager() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e: { stopPropagation: () => void; }) => {
-                        e.stopPropagation();
-                        setSelectedFreeDaysRule(rule);
-                        setFreeDaysRuleForm({
-                          name: rule.name,
-                          description: rule.description || '',
-                          numberOfDays: rule.numberOfDays,
-                          startType: rule.startType,
-                          targetType: rule.targetType,
-                          targetDaysSinceRegistration: rule.targetDaysSinceRegistration || undefined,
-                          targetMinSpend: rule.targetMinSpend || undefined,
-                          applyAfterSubscription: rule.applyAfterSubscription,
-                          validFrom: rule.validFrom ? new Date(rule.validFrom).toISOString().split('T')[0] : '',
-                          validUntil: rule.validUntil ? new Date(rule.validUntil).toISOString().split('T')[0] : '',
-                          maxBeneficiaries: rule.maxBeneficiaries || undefined
-                        });
-                        setIsEditingFreeDaysRule(true);
-                        setIsAddingFreeDaysRule(true);
-                      }}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e: { stopPropagation: () => void; }) => {
-                        e.stopPropagation();
-                        handleDeleteFreeDaysRule(rule.id, rule.name);
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-600" />
-                    </Button>
+                    {can.manageFreeDays() && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e: { stopPropagation: () => void; }) => {
+                          e.stopPropagation();
+                          setSelectedFreeDaysRule(rule);
+                          setFreeDaysRuleForm({
+                            name: rule.name,
+                            description: rule.description || '',
+                            numberOfDays: rule.numberOfDays,
+                            startType: rule.startType,
+                            targetType: rule.targetType,
+                            targetDaysSinceRegistration: rule.targetDaysSinceRegistration || undefined,
+                            targetMinSpend: rule.targetMinSpend || undefined,
+                            applyAfterSubscription: rule.applyAfterSubscription,
+                            validFrom: rule.validFrom ? new Date(rule.validFrom).toISOString().split('T')[0] : '',
+                            validUntil: rule.validUntil ? new Date(rule.validUntil).toISOString().split('T')[0] : '',
+                            maxBeneficiaries: rule.maxBeneficiaries || undefined
+                          });
+                          setIsEditingFreeDaysRule(true);
+                          setIsAddingFreeDaysRule(true);
+                        }}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {can.manageFreeDays() && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e: { stopPropagation: () => void; }) => {
+                          e.stopPropagation();
+                          handleDeleteFreeDaysRule(rule.id, rule.name);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                      </Button>
+                    )}
                     {expandedFreeDaysRuleId === rule.id ? (
                       <ChevronUp className="w-5 h-5 text-gray-400" />
                     ) : (
@@ -740,70 +1042,73 @@ export function SubscriptionPackageManager() {
                   </div>
                 </div>
 
-                {/* Rule Details */}
+                {/* Rule Details — beneficiaries */}
                 {expandedFreeDaysRuleId === rule.id && (
-                  <div className="border-t p-6 bg-gray-50">
+                  <div className="border-t p-6 bg-gray-50 space-y-4">
+                    {/* Add beneficiary manually — only for MANUAL type */}
                     {rule.targetType === 'MANUAL' && (
                       <div>
-                        <div className="flex items-center justify-between mb-4">
-                          <h4 className="font-semibold text-gray-900">
-                            {language === 'fr' ? 'Bénéficiaires Manuels' : 'Manual Beneficiaries'}
-                          </h4>
-                        </div>
-
-                        <div className="mb-4">
-                          <Label>{language === 'fr' ? 'Rechercher un utilisateur' : 'Search for a user'}</Label>
-                          <Input
-                            value={userSearchQuery}
-                            onChange={(e) => handleSearchUsers(e.target.value)}
-                            placeholder={language === 'fr' ? 'Nom, email ou téléphone...' : 'Name, email or phone...'}
-                          />
-                          {userSearchResults.length > 0 && (
-                            <div className="mt-2 bg-white border rounded-lg max-h-40 overflow-y-auto">
-                              {userSearchResults.map(user => (
-                                <div 
-                                  key={user.id} 
-                                  className="p-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center"
-                                  onClick={() => handleAddBeneficiary(rule.id, user.id)}
-                                >
-                                  <span>{user.firstName} {user.lastName}</span>
-                                  <span className="text-sm text-gray-500">{user.email}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-
-                        {rule.beneficiaries && rule.beneficiaries.length > 0 ? (
-                          <div className="space-y-2">
-                            {rule.beneficiaries.map((beneficiary: any) => (
-                              <div key={beneficiary.id} className="bg-white p-3 rounded-lg border flex justify-between items-center">
-                                <div>
-                                  <div className="font-medium">{beneficiary.user?.firstName} {beneficiary.user?.lastName}</div>
-                                  <div className="text-sm text-gray-500">{beneficiary.user?.email}</div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="outline">
-                                    {beneficiary.daysRemaining} / {beneficiary.daysGranted} {language === 'fr' ? 'jours' : 'days'}
-                                  </Badge>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleRemoveBeneficiary(rule.id, beneficiary.userId)}
-                                  >
-                                    <Trash2 className="w-4 h-4 text-red-600" />
-                                  </Button>
-                                </div>
+                        <Label className="mb-2 block">{language === 'fr' ? 'Ajouter un bénéficiaire' : 'Add a beneficiary'}</Label>
+                        <Input
+                          value={userSearchQuery}
+                          onChange={(e) => handleSearchUsers(e.target.value)}
+                          placeholder={language === 'fr' ? 'Nom, email ou téléphone...' : 'Name, email or phone...'}
+                        />
+                        {userSearchResults.length > 0 && (
+                          <div className="mt-2 bg-white border rounded-lg max-h-40 overflow-y-auto">
+                            {userSearchResults.map(user => (
+                              <div
+                                key={user.id}
+                                className="p-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center"
+                                onClick={() => handleAddBeneficiary(rule.id, user.id)}
+                              >
+                                <span>{user.firstName} {user.lastName}</span>
+                                <span className="text-sm text-gray-500">{user.email}</span>
                               </div>
                             ))}
                           </div>
-                        ) : (
-                          <p className="text-sm text-gray-500">
-                            {language === 'fr' ? 'Aucun bénéficiaire manuel' : 'No manual beneficiaries'}
-                          </p>
                         )}
                       </div>
                     )}
+
+                    {/* Beneficiaries list — for all rule types */}
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-3">
+                        {language === 'fr' ? 'Bénéficiaires' : 'Beneficiaries'}
+                        {rule.beneficiaries?.length > 0 && (
+                          <span className="ml-2 text-sm font-normal text-gray-500">({rule.beneficiaries.length})</span>
+                        )}
+                      </h4>
+                      {rule.beneficiaries && rule.beneficiaries.length > 0 ? (
+                        <div className="space-y-2">
+                          {rule.beneficiaries.map((beneficiary: any) => (
+                            <div key={beneficiary.id} className="bg-white p-3 rounded-lg border flex justify-between items-center">
+                              <div>
+                                <div className="font-medium">{beneficiary.user?.firstName} {beneficiary.user?.lastName}</div>
+                                <div className="text-sm text-gray-500">{beneficiary.user?.email}</div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline">
+                                  {beneficiary.daysRemaining ?? beneficiary.daysGranted} / {beneficiary.daysGranted} {language === 'fr' ? 'jours' : 'days'}
+                                </Badge>
+                                <Badge variant={beneficiary.isActive !== false ? 'default' : 'secondary'} className="text-xs">
+                                  {beneficiary.isActive !== false ? (language === 'fr' ? 'Actif' : 'Active') : (language === 'fr' ? 'Terminé' : 'Done')}
+                                </Badge>
+                                {can.manageFreeDays() && (
+                                  <Button variant="ghost" size="sm" onClick={() => handleRemoveBeneficiary(rule.id, beneficiary.userId)}>
+                                    <Trash2 className="w-4 h-4 text-red-600" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500">
+                          {language === 'fr' ? 'Aucun bénéficiaire pour le moment' : 'No beneficiaries yet'}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
               </Card>
@@ -1370,6 +1675,192 @@ export function SubscriptionPackageManager() {
             >
               {language === 'fr' ? 'Enregistrer' : 'Save'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Plan Dialog (Add / Edit) */}
+      <Dialog open={isEditingPlan || isAddingNewPlan} onOpenChange={(open) => { if (!open) { setIsEditingPlan(false); setIsAddingNewPlan(false); setSelectedPlan(null); } }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{isAddingNewPlan ? (language === 'fr' ? 'Nouveau Plan Tarifaire' : 'New Pricing Plan') : (language === 'fr' ? `Modifier: ${selectedPlan?.name}` : `Edit: ${selectedPlan?.name}`)}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>{language === 'fr' ? 'Nom du Plan *' : 'Plan Name *'}</Label>
+              <Input value={editedPlan.name} onChange={(e) => setEditedPlan({ ...editedPlan, name: e.target.value })} className={pricingFormErrors.planName ? 'border-red-500' : ''} />
+              {pricingFormErrors.planName && <p className="text-xs text-red-500 mt-1">{pricingFormErrors.planName}</p>}
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>{language === 'fr' ? 'Tarif Horaire (FCFA)' : 'Hourly Rate (FCFA)'}</Label>
+                <Input type="number" value={editedPlan.hourlyRate} onChange={(e) => setEditedPlan({ ...editedPlan, hourlyRate: parseInt(e.target.value) || 0 })} />
+              </div>
+              <div>
+                <Label>{language === 'fr' ? "Minimum d'Heures" : 'Minimum Hours'}</Label>
+                <Input type="number" min="1" value={editedPlan.minimumHours} onChange={(e) => setEditedPlan({ ...editedPlan, minimumHours: parseInt(e.target.value) || 1 })} />
+              </div>
+              <div>
+                <Label>{language === 'fr' ? 'Tarif Journalier (FCFA)' : 'Daily Rate (FCFA)'}</Label>
+                <Input type="number" value={editedPlan.dailyRate} onChange={(e) => setEditedPlan({ ...editedPlan, dailyRate: parseInt(e.target.value) || 0 })} />
+              </div>
+              <div>
+                <Label>{language === 'fr' ? 'Réduction (%)' : 'Discount (%)'}</Label>
+                <Input type="number" value={editedPlan.discount} onChange={(e) => setEditedPlan({ ...editedPlan, discount: parseInt(e.target.value) || 0 })} />
+              </div>
+              <div>
+                <Label>{language === 'fr' ? 'Tarif Hebdomadaire (FCFA)' : 'Weekly Rate (FCFA)'}</Label>
+                <Input type="number" value={editedPlan.weeklyRate} onChange={(e) => setEditedPlan({ ...editedPlan, weeklyRate: parseInt(e.target.value) || 0 })} />
+              </div>
+              <div>
+                <Label>{language === 'fr' ? 'Tarif Mensuel (FCFA)' : 'Monthly Rate (FCFA)'}</Label>
+                <Input type="number" value={editedPlan.monthlyRate} onChange={(e) => setEditedPlan({ ...editedPlan, monthlyRate: parseInt(e.target.value) || 0 })} />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={editedPlan.hasOverride} onCheckedChange={(checked: boolean) => setEditedPlan({ ...editedPlan, hasOverride: checked, overTimeValue: checked ? editedPlan.overTimeValue : 0 })} />
+              <Label>{language === 'fr' ? 'Tarification spéciale hors forfait (overtime)' : 'Special overtime pricing'}</Label>
+            </div>
+            {editedPlan.hasOverride && (
+              <Card className="p-4 bg-yellow-50 border-yellow-200">
+                <h4 className="text-sm font-medium mb-3 text-yellow-800">{language === 'fr' ? 'Configuration Overtime' : 'Overtime Configuration'}</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>{language === 'fr' ? 'Type' : 'Type'}</Label>
+                    <Select value={editedPlan.overTimeType} onValueChange={(v: 'FIXED_PRICE' | 'PERCENTAGE_REDUCTION') => setEditedPlan({ ...editedPlan, overTimeType: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="PERCENTAGE_REDUCTION">{language === 'fr' ? 'Réduction en %' : 'Percentage reduction'}</SelectItem>
+                        <SelectItem value="FIXED_PRICE">{language === 'fr' ? 'Prix fixe' : 'Fixed price'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>{editedPlan.overTimeType === 'FIXED_PRICE' ? (language === 'fr' ? 'Prix fixe (FCFA)' : 'Fixed price (FCFA)') : (language === 'fr' ? 'Réduction (%)' : 'Reduction (%)')}</Label>
+                    <Input type="number" value={editedPlan.overTimeValue} onChange={(e) => setEditedPlan({ ...editedPlan, overTimeValue: parseFloat(e.target.value) || 0 })} min="0" max={editedPlan.overTimeType === 'PERCENTAGE_REDUCTION' ? '100' : undefined} />
+                  </div>
+                </div>
+                <div className="mt-4 space-y-2">
+                  <p className="text-xs font-medium text-yellow-800">{language === 'fr' ? 'Plages horaires (0-23h)' : 'Time slots (0-23h)'}</p>
+                  {(['hourly', 'daily', 'weekly', 'monthly'] as const).map((type) => (
+                    <div key={type} className="grid grid-cols-3 gap-2 items-end">
+                      <Label className="text-xs capitalize">{language === 'fr' ? { hourly: 'Horaire', daily: 'Journalier', weekly: 'Hebdo', monthly: 'Mensuel' }[type] : type}</Label>
+                      <div>
+                        <Label className="text-xs">{language === 'fr' ? 'Début' : 'Start'}</Label>
+                        <Input type="number" min="0" max="23" className="h-8"
+                          value={(editedPlan[`${type}StartHour` as keyof typeof editedPlan] as number | null) ?? ''}
+                          onChange={(e) => setEditedPlan({ ...editedPlan, [`${type}StartHour`]: e.target.value ? parseInt(e.target.value) : null })}
+                          placeholder="0" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">{language === 'fr' ? 'Fin' : 'End'}</Label>
+                        <Input type="number" min="0" max="23" className="h-8"
+                          value={(editedPlan[`${type}EndHour` as keyof typeof editedPlan] as number | null) ?? ''}
+                          onChange={(e) => setEditedPlan({ ...editedPlan, [`${type}EndHour`]: e.target.value ? parseInt(e.target.value) : null })}
+                          placeholder="23" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
+            <div className="flex items-center gap-2">
+              <Switch checked={editedPlan.isActive} onCheckedChange={(checked: boolean) => setEditedPlan({ ...editedPlan, isActive: checked })} />
+              <Label>{language === 'fr' ? 'Plan Actif' : 'Active Plan'}</Label>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setIsEditingPlan(false); setIsAddingNewPlan(false); }}>
+              <X className="w-4 h-4 mr-2" />{language === 'fr' ? 'Annuler' : 'Cancel'}
+            </Button>
+            <Button onClick={handleSavePlan}>
+              <Check className="w-4 h-4 mr-2" />{language === 'fr' ? 'Sauvegarder' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rule Dialog (Add / Edit) */}
+      <Dialog open={isEditingRule || isAddingNewRule} onOpenChange={(open) => { if (!open) { setIsEditingRule(false); setIsAddingNewRule(false); setSelectedRule(null); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{isAddingNewRule ? (language === 'fr' ? 'Nouvelle Règle Tarifaire' : 'New Pricing Rule') : (language === 'fr' ? `Modifier: ${selectedRule?.name}` : `Edit: ${selectedRule?.name}`)}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>{language === 'fr' ? 'Nom de la Règle *' : 'Rule Name *'}</Label>
+              <Input value={editedRule.name} onChange={(e) => setEditedRule({ ...editedRule, name: e.target.value })} className={pricingFormErrors.planName ? 'border-red-500' : ''} />
+              {pricingFormErrors.planName && <p className="text-xs text-red-500 mt-1">{pricingFormErrors.planName}</p>}
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>{language === 'fr' ? 'Jour de la Semaine' : 'Day of Week'}</Label>
+                <Select value={editedRule.dayOfWeek?.toString() ?? 'null'} onValueChange={(v) => setEditedRule({ ...editedRule, dayOfWeek: v === 'null' ? null : parseInt(v) })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {daysOfWeek.map((d) => (
+                      <SelectItem key={d.value?.toString() ?? 'null'} value={d.value?.toString() ?? 'null'}>{d.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>{language === 'fr' ? 'Multiplicateur *' : 'Multiplier *'}</Label>
+                <Input type="number" step="0.1" value={editedRule.multiplier} onChange={(e) => setEditedRule({ ...editedRule, multiplier: parseFloat(e.target.value) || 1 })} className={pricingFormErrors.multiplier ? 'border-red-500' : ''} />
+                {pricingFormErrors.multiplier && <p className="text-xs text-red-500 mt-1">{pricingFormErrors.multiplier}</p>}
+              </div>
+              <div>
+                <Label>{language === 'fr' ? 'Heure de Début' : 'Start Hour'}</Label>
+                <Input type="number" min="0" max="23" value={editedRule.startHour ?? ''} onChange={(e) => setEditedRule({ ...editedRule, startHour: e.target.value ? parseInt(e.target.value) : null })} placeholder="0-23" />
+              </div>
+              <div>
+                <Label>{language === 'fr' ? 'Heure de Fin' : 'End Hour'}</Label>
+                <Input type="number" min="0" max="23" value={editedRule.endHour ?? ''} onChange={(e) => setEditedRule({ ...editedRule, endHour: e.target.value ? parseInt(e.target.value) : null })} placeholder="0-23" />
+              </div>
+              <div>
+                <Label>{language === 'fr' ? 'Priorité' : 'Priority'}</Label>
+                <Input type="number" value={editedRule.priority} onChange={(e) => setEditedRule({ ...editedRule, priority: parseInt(e.target.value) || 0 })} />
+              </div>
+              <div className="flex items-center gap-2 pt-6">
+                <Switch checked={editedRule.isActive} onCheckedChange={(checked: boolean) => setEditedRule({ ...editedRule, isActive: checked })} />
+                <Label>{language === 'fr' ? 'Règle Active' : 'Active Rule'}</Label>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setIsEditingRule(false); setIsAddingNewRule(false); }}>
+              <X className="w-4 h-4 mr-2" />{language === 'fr' ? 'Annuler' : 'Cancel'}
+            </Button>
+            <Button onClick={handleSaveRule}>
+              <Check className="w-4 h-4 mr-2" />{language === 'fr' ? 'Sauvegarder' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Plan Confirmation */}
+      <Dialog open={isDeletingPlan !== null} onOpenChange={(open) => { if (!open) setIsDeletingPlan(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{language === 'fr' ? 'Supprimer le Plan' : 'Delete Plan'}</DialogTitle>
+            <DialogDescription>{language === 'fr' ? 'Cette action est définitive. Continuer ?' : 'This action cannot be undone. Continue?'}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeletingPlan(null)}>{language === 'fr' ? 'Annuler' : 'Cancel'}</Button>
+            <Button className="bg-red-600 text-white hover:bg-red-700" onClick={() => isDeletingPlan && handleDeletePlan(isDeletingPlan)}>{language === 'fr' ? 'Supprimer' : 'Delete'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Rule Confirmation */}
+      <Dialog open={isDeletingRule !== null} onOpenChange={(open) => { if (!open) setIsDeletingRule(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{language === 'fr' ? 'Supprimer la Règle' : 'Delete Rule'}</DialogTitle>
+            <DialogDescription>{language === 'fr' ? 'Cette action est définitive. Continuer ?' : 'This action cannot be undone. Continue?'}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeletingRule(null)}>{language === 'fr' ? 'Annuler' : 'Cancel'}</Button>
+            <Button className="bg-red-600 text-white hover:bg-red-700" onClick={() => isDeletingRule && handleDeleteRule(isDeletingRule)}>{language === 'fr' ? 'Supprimer' : 'Delete'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

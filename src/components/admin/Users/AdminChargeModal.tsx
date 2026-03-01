@@ -5,7 +5,7 @@ import { Input } from '../../ui/input';
 import { Textarea } from '../../ui/textarea';
 import { Label } from '../../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
-import { AlertTriangle, DollarSign, Bike, User } from 'lucide-react';
+import { AlertTriangle, DollarSign, Bike, User, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { walletService } from '../../../services/api/wallet.service';
 import { bikeService, type BikePosition } from '../../../services/api/bike.service';
@@ -154,8 +154,8 @@ export function AdminChargeModal({
     }
 
     const amount = parseFloat(formData.amount);
-    if (isNaN(amount) || amount <= 0) {
-      toast.error('Le montant doit être supérieur à 0');
+    if (isNaN(amount) || amount === 0) {
+      toast.error('Le montant ne peut pas être zéro');
       return;
     }
 
@@ -171,9 +171,12 @@ export function AdminChargeModal({
           description: formData.description
         });
 
-        toast.success(`Charge de ${amount} FCFA modifiée avec succès`);
+        const absAmount = Math.abs(amount);
+        toast.success(amount < 0
+          ? `Remboursement de ${absAmount} FCFA effectué avec succès`
+          : `Charge de ${absAmount} FCFA modifiée avec succès`);
       } else {
-        // Créer une nouvelle charge
+        // Créer une nouvelle charge ou un remboursement
         await incidentService.createAdminCharge({
           userId: formData.userId,
           bikeId: formData.bikeId && formData.bikeId !== 'none' ? formData.bikeId : undefined,
@@ -182,7 +185,10 @@ export function AdminChargeModal({
           description: formData.description
         });
 
-        toast.success(`Charge de ${amount} FCFA affectée avec succès`);
+        const absAmount = Math.abs(amount);
+        toast.success(amount < 0
+          ? `Remboursement de ${absAmount} FCFA crédité sur le solde de l'utilisateur`
+          : `Charge de ${absAmount} FCFA affectée avec succès`);
       }
       
       // Reset form
@@ -217,17 +223,29 @@ export function AdminChargeModal({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-orange-500" />
-            {isEditMode ? 'Modifier la charge' : 'Affecter une charge à un utilisateur'}
-          </DialogTitle>
-          <DialogDescription>
-            {isEditMode 
-              ? 'Modifiez les informations de la charge administrative'
-              : 'Créez une charge administrative qui sera déduite de la caution de l\'utilisateur'}
-          </DialogDescription>
-        </DialogHeader>
+        {(() => {
+          const currentAmount = parseFloat(formData.amount);
+          const isRefund = !isNaN(currentAmount) && currentAmount < 0;
+          return (
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                {isRefund
+                  ? <TrendingUp className="w-5 h-5 text-green-500" />
+                  : <AlertTriangle className="w-5 h-5 text-orange-500" />}
+                {isEditMode
+                  ? (isRefund ? 'Modifier le remboursement' : 'Modifier la charge')
+                  : (isRefund ? 'Rembourser un utilisateur' : 'Affecter une charge à un utilisateur')}
+              </DialogTitle>
+              <DialogDescription>
+                {isEditMode
+                  ? 'Modifiez les informations de la charge/remboursement administratif'
+                  : isRefund
+                    ? 'Un montant négatif crédite le solde de l\'utilisateur (remboursement).'
+                    : 'Un montant positif sera déduit de la caution de l\'utilisateur.'}
+              </DialogDescription>
+            </DialogHeader>
+          );
+        })()}
 
         <div className="space-y-4 py-4">
           {loadingData ? (
@@ -297,14 +315,20 @@ export function AdminChargeModal({
                 <Label className="flex items-center gap-2">
                   <DollarSign className="w-4 h-4" />
                   Montant (FCFA) *
+                  <span className="text-xs text-gray-400 font-normal ml-1">— positif = déduction, négatif = remboursement</span>
                 </Label>
                 <Input
                   type="number"
-                  placeholder="Ex: 5000"
+                  placeholder="Ex: 5000 ou -2000 pour un remboursement"
                   value={formData.amount}
                   onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                  min="1"
+                  className={parseFloat(formData.amount) < 0 ? 'border-green-400 focus:ring-green-400' : ''}
                 />
+                {parseFloat(formData.amount) < 0 && (
+                  <p className="text-xs text-green-600 font-medium">
+                    Remboursement de {Math.abs(parseFloat(formData.amount)).toLocaleString()} FCFA → sera ajouté au solde de l'utilisateur
+                  </p>
+                )}
               </div>
 
               {/* Raison */}
@@ -338,13 +362,27 @@ export function AdminChargeModal({
                 />
               </div>
 
-              {/* Warning */}
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                <p className="text-sm text-yellow-800">
-                  ⚠️ Cette charge sera déduite de la caution de l'utilisateur. 
-                  Si la caution est insuffisante, le montant restant sera ajouté au solde négatif.
-                </p>
-              </div>
+              {/* Warning adaptatif */}
+              {(() => {
+                const amt = parseFloat(formData.amount);
+                if (!isNaN(amt) && amt < 0) {
+                  return (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <p className="text-sm text-green-800">
+                        Ce remboursement sera crédité directement sur le solde wallet de l'utilisateur.
+                      </p>
+                    </div>
+                  );
+                }
+                return (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <p className="text-sm text-yellow-800">
+                      ⚠️ Cette charge sera déduite de la caution de l'utilisateur.
+                      Si la caution est insuffisante, le montant restant sera ajouté au solde négatif.
+                    </p>
+                  </div>
+                );
+              })()}
             </>
           )}
         </div>

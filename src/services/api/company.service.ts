@@ -38,6 +38,14 @@ export interface PricingPlan {
     id: string;
     overTimeType: 'FIXED_PRICE' | 'PERCENTAGE_REDUCTION';
     overTimeValue: number;
+    hourlyStartHour?: number | null;
+    hourlyEndHour?: number | null;
+    dailyStartHour?: number | null;
+    dailyEndHour?: number | null;
+    weeklyStartHour?: number | null;
+    weeklyEndHour?: number | null;
+    monthlyStartHour?: number | null;
+    monthlyEndHour?: number | null;
   };
 }
 

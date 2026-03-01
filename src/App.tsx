@@ -57,18 +57,18 @@ export default function App() {
               
               {/* Bike Management */}
               <Route path="bikes" element={<ProtectedAccess mode="route" resource="bikes" action="read"><BikeManagement /></ProtectedAccess>} />
-              <Route path="bikes/actions" element={<ProtectedAccess mode="route" resource="bikes" action="read"><BikeActionManagement /></ProtectedAccess>} />
+              <Route path="bikes/actions" element={<ProtectedAccess mode="route" resource="bikes" action="manage_actions"><BikeActionManagement /></ProtectedAccess>} />
               <Route path="bikes/:id" element={<ProtectedAccess mode="route" resource="bikes" action="read"><BikeDetails /></ProtectedAccess>} />
-              <Route path="bikes/:id/trips" element={<ProtectedAccess mode="route" resource="bikes" action="read"><BikeTripHistory /></ProtectedAccess>} />
-              <Route path="bikes/:id/maintenance" element={<ProtectedAccess mode="route" resource="bikes" action="read"><BikeMaintenanceHistory /></ProtectedAccess>} />
-              <Route path="bikes/:id/map" element={<ProtectedAccess mode="route" resource="bikes" action="read"><BikeMap /></ProtectedAccess>} />
+              <Route path="bikes/:id/trips" element={<ProtectedAccess mode="route" resource="bikes" action="view_trips"><BikeTripHistory /></ProtectedAccess>} />
+              <Route path="bikes/:id/maintenance" element={<ProtectedAccess mode="route" resource="bikes" action="view_maintenance"><BikeMaintenanceHistory /></ProtectedAccess>} />
+              <Route path="bikes/:id/map" element={<ProtectedAccess mode="route" resource="bikes" action="view_map"><BikeMap /></ProtectedAccess>} />
               
               {/* User Management */}
               <Route path="users" element={<ProtectedAccess mode="route" resource="users" action="read"><UserManagement /></ProtectedAccess>} />
               <Route path="users/:id" element={<ProtectedAccess mode="route" resource="users" action="read"><UserDetails /></ProtectedAccess>} />
 
               {/* Reservations */}
-              <Route path="reservations" element={<ProtectedAccess mode="route" resource="incidents" action="read"><ReservationManagement /></ProtectedAccess>} />
+              <Route path="reservations" element={<ProtectedAccess mode="route" resource="reservations" action="read"><ReservationManagement /></ProtectedAccess>} />
               
               {/* Financial */}
               <Route path="financial" element={<ProtectedAccess mode="route" resource="wallet" action="read"><FinancialDashboard /></ProtectedAccess>} />

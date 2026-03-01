@@ -172,6 +172,7 @@ export function usePermissions() {
     createEmployee: () => hasPermission('employees', 'create'),
     updateEmployee: () => hasPermission('employees', 'update'),
     deleteEmployee: () => hasPermission('employees', 'delete'),
+    exportEmployees: () => hasPermission('employees', 'export'),
     resetEmployeePassword: () => hasPermission('employees', 'reset_password'),
 
     // Abonnements

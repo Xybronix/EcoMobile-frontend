@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Search, Star, DollarSign, Activity, Ban, CheckCircle, Mail, Phone, Shield, AlertCircle } from 'lucide-react';
+import { Users, Search, Star, DollarSign, Activity, Ban, CheckCircle, Mail, Phone, Shield, AlertCircle, KeyRound, Eye, EyeOff, Copy } from 'lucide-react';
 import { Card } from '../../ui/card';
 import { Input } from '../../ui/input';
 import { Badge } from '../../ui/badge';
 import { Button } from '../../ui/button';
+import { Label } from '../../ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../ui/dialog';
 import { toast } from 'sonner';
@@ -14,6 +15,7 @@ import { usePermissions } from '../../../hooks/usePermissions';
 import { ProtectedAccess } from '../../shared/ProtectedAccess';
 import { ExportButtons } from '../ExportButtons';
 import { userService, type User } from '../../../services/api/user.service';
+import { adminService } from '../../../services/api/admin.service';
 
 export function UserManagement() {
   const { t } = useTranslation();
@@ -39,6 +41,64 @@ export function UserManagement() {
     user: null,
     loading: false
   });
+
+  const [resetPwdDialog, setResetPwdDialog] = useState<{
+    open: boolean;
+    user: User | null;
+    newPassword: string;
+    showPassword: boolean;
+    loading: boolean;
+    generatedPassword: string | null;
+  }>({
+    open: false,
+    user: null,
+    newPassword: '',
+    showPassword: false,
+    loading: false,
+    generatedPassword: null
+  });
+
+  const openResetPwdDialog = (user: User) => {
+    setResetPwdDialog({ open: true, user, newPassword: '', showPassword: false, loading: false, generatedPassword: null });
+  };
+
+  const closeResetPwdDialog = () => {
+    setResetPwdDialog({ open: false, user: null, newPassword: '', showPassword: false, loading: false, generatedPassword: null });
+  };
+
+  const handleGeneratePassword = async () => {
+    if (!resetPwdDialog.user) return;
+    setResetPwdDialog(prev => ({ ...prev, loading: true }));
+    try {
+      const result = await adminService.resetUserPassword(resetPwdDialog.user.id, { generateNew: true });
+      setResetPwdDialog(prev => ({ ...prev, loading: false, generatedPassword: result.password || null, newPassword: '' }));
+      toast.success('Mot de passe généré automatiquement');
+    } catch (error) {
+      setResetPwdDialog(prev => ({ ...prev, loading: false }));
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de la génération');
+    }
+  };
+
+  const handleConfirmResetPassword = async () => {
+    if (!resetPwdDialog.user) return;
+    if (!resetPwdDialog.newPassword && !resetPwdDialog.generatedPassword) {
+      toast.error('Veuillez saisir un nouveau mot de passe ou en générer un automatiquement');
+      return;
+    }
+    setResetPwdDialog(prev => ({ ...prev, loading: true }));
+    try {
+      if (!resetPwdDialog.generatedPassword) {
+        await adminService.resetUserPassword(resetPwdDialog.user.id, { newPassword: resetPwdDialog.newPassword });
+        toast.success('Mot de passe réinitialisé avec succès');
+      } else {
+        toast.success('Mot de passe déjà généré et appliqué');
+      }
+      closeResetPwdDialog();
+    } catch (error) {
+      setResetPwdDialog(prev => ({ ...prev, loading: false }));
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de la réinitialisation');
+    }
+  };
 
   const itemsPerPage = 10;
 
@@ -468,6 +528,17 @@ export function UserManagement() {
                           </Button>
                         )}
                       </ProtectedAccess>
+
+                      {can.resetUserPassword() && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openResetPwdDialog(user)}
+                          title="Réinitialiser le mot de passe"
+                        >
+                          <KeyRound className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -583,6 +654,100 @@ export function UserManagement() {
           </div>
         )}
       </ProtectedAccess>
+
+      {/* Dialog réinitialisation mot de passe */}
+      <Dialog open={resetPwdDialog.open} onOpenChange={closeResetPwdDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Réinitialiser le mot de passe</DialogTitle>
+            <DialogDescription>
+              {resetPwdDialog.user && `Utilisateur : ${[resetPwdDialog.user.firstName, resetPwdDialog.user.lastName].filter(Boolean).join(' ') || resetPwdDialog.user.email}`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {resetPwdDialog.generatedPassword ? (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2">
+                <Label className="text-sm text-green-700 font-medium">Mot de passe généré :</Label>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 bg-white border rounded px-3 py-2 text-sm font-mono select-all">
+                    {resetPwdDialog.generatedPassword}
+                  </code>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText(resetPwdDialog.generatedPassword!);
+                      toast.success('Copié dans le presse-papier');
+                    }}
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-green-600">Communiquez ce mot de passe à l'utilisateur de façon sécurisée.</p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">Nouveau mot de passe</Label>
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        id="new-password"
+                        type={resetPwdDialog.showPassword ? 'text' : 'password'}
+                        placeholder="Saisir un nouveau mot de passe..."
+                        value={resetPwdDialog.newPassword}
+                        onChange={(e) => setResetPwdDialog(prev => ({ ...prev, newPassword: e.target.value }))}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        onClick={() => setResetPwdDialog(prev => ({ ...prev, showPassword: !prev.showPassword }))}
+                      >
+                        {resetPwdDialog.showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 border-t border-gray-200" />
+                  <span className="text-xs text-gray-400">ou</span>
+                  <div className="flex-1 border-t border-gray-200" />
+                </div>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  disabled={resetPwdDialog.loading}
+                  onClick={handleGeneratePassword}
+                >
+                  {resetPwdDialog.loading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2" />
+                  ) : (
+                    <KeyRound className="w-4 h-4 mr-2" />
+                  )}
+                  Générer automatiquement
+                </Button>
+              </>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={closeResetPwdDialog} disabled={resetPwdDialog.loading}>
+              Annuler
+            </Button>
+            {!resetPwdDialog.generatedPassword && (
+              <Button
+                onClick={handleConfirmResetPassword}
+                disabled={resetPwdDialog.loading || !resetPwdDialog.newPassword}
+              >
+                {resetPwdDialog.loading && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                )}
+                Confirmer
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog de confirmation */}
       <Dialog open={confirmDialog.open} onOpenChange={closeConfirmDialog}>

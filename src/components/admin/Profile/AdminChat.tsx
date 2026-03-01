@@ -33,6 +33,7 @@ export function AdminChat() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Vérifier les permissions
   const canReadChat = hasPermission('chat', 'read');
@@ -160,6 +161,36 @@ export function AdminChat() {
     if (e.key === 'Enter' && !e.shiftKey && canSendMessages) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+
+  const handleAttachmentClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedUser) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Fichier trop volumineux (max 5 Mo)');
+      return;
+    }
+    try {
+      setSendingMessage(true);
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64DataUri = reader.result as string;
+        const { url } = await chatService.uploadAttachment(base64DataUri);
+        const message = await chatService.sendMessageAsAdmin(selectedUser.id, `[image]${url}`);
+        setMessages(prev => [...prev, message]);
+        setTimeout(scrollToBottom, 100);
+      };
+      reader.readAsDataURL(file);
+    } catch (error: any) {
+      toast.error(error.message || 'Erreur lors de l\'envoi du fichier');
+    } finally {
+      setSendingMessage(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -407,7 +438,16 @@ export function AdminChat() {
                                 : 'bg-white text-gray-900 rounded-bl-sm shadow-md border border-gray-100'
                             }`}
                           >
-                            <p className="text-sm break-words">{message.message}</p>
+                            {message.message.startsWith('[image]') ? (
+                              <img
+                                src={message.message.replace('[image]', '')}
+                                alt="attachment"
+                                className="max-w-xs rounded-lg"
+                                style={{ maxHeight: 200 }}
+                              />
+                            ) : (
+                              <p className="text-sm break-words">{message.message}</p>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -444,7 +484,14 @@ export function AdminChat() {
                 <div className="p-4 border-t border-gray-200 bg-white shadow-lg">
                   <div className="flex items-center gap-2">
                     <ProtectedAccess mode="component" resource="chat" action="manage" fallback={null}>
-                      <Button variant="ghost" size="icon" className="hover:bg-green-50">
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleFileChange}
+                      />
+                      <Button variant="ghost" size="icon" className="hover:bg-green-50" onClick={handleAttachmentClick} disabled={!selectedUser || sendingMessage}>
                         <Paperclip className="w-5 h-5 text-gray-600" />
                       </Button>
                       <Button variant="ghost" size="icon" className="hover:bg-green-50">

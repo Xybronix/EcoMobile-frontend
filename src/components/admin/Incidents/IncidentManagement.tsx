@@ -387,7 +387,7 @@ export function IncidentManagement() {
                 <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">{selectedIncident.description}</p>
               </div>
 
-              {selectedIncident.status === 'OPEN' && (
+              {selectedIncident.status === 'OPEN' && can.resolveIncident() && (
                 <>
                   <div>
                     <label className="text-sm text-gray-600 mb-2 block">Montant du Remboursement (FCFA)</label>
@@ -433,7 +433,7 @@ export function IncidentManagement() {
               )}
             </div>
 
-            {selectedIncident.status === 'OPEN' && (
+            {selectedIncident.status === 'OPEN' && can.resolveIncident() && (
               <DialogFooter className="gap-2">
                 <Button variant="outline" onClick={() => setSelectedIncident(null)}>
                   Annuler

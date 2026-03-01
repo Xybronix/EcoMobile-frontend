@@ -378,11 +378,19 @@ export class AdminService {
     endDate?: string;
   }): Promise<PaginatedLogs> {
     const response = await apiClient.get<PaginatedLogs>('/admin/activity-logs', params);
-    
+
     if (!response.success || !response.data) {
       throw new Error(response.error || 'Erreur lors de la récupération des journaux');
     }
 
+    return response.data;
+  }
+
+  async resetUserPassword(userId: string, data: { newPassword?: string; generateNew?: boolean }): Promise<{ generated: boolean; password?: string }> {
+    const response = await apiClient.post<{ generated: boolean; password?: string }>(`/admin/users/${userId}/reset-password`, data);
+    if (!response.success || !response.data) {
+      throw new Error(response.error || 'Erreur lors de la réinitialisation du mot de passe');
+    }
     return response.data;
   }
 }

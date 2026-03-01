@@ -114,10 +114,18 @@ export class ChatService {
 
   async deleteMessage(messageId: string): Promise<void> {
     const response = await apiClient.delete(`/chat/messages/${messageId}`);
-    
+
     if (!response.success) {
       throw new Error(response.error || 'Erreur lors de la suppression du message');
     }
+  }
+
+  async uploadAttachment(base64DataUri: string): Promise<{ url: string }> {
+    const response = await apiClient.post<{ url: string }>('/chat/attachments', { base64: base64DataUri });
+    if (!response.success || !response.data) {
+      throw new Error(response.error || 'Erreur lors de l\'upload');
+    }
+    return response.data;
   }
 }
 
