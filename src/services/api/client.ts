@@ -1,6 +1,6 @@
 export const getApiBaseUrl = (): string => {
   if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
-    return (import.meta as any).env.VITE_API_URL || 'http://localhost:10000/api/v1';
+    return (import.meta as any).env.VITE_API_URL;
   }
   
   if ((import.meta as any).env.VITE_NODE_ENV === 'production') {

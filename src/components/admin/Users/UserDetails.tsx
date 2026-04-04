@@ -406,7 +406,9 @@ export function UserDetails() {
                 )}
                 {user.depositExemptionUntil && new Date(user.depositExemptionUntil) > new Date() && (
                   <Badge className="mt-1 bg-blue-100 text-blue-800">
-                    Déblocage actif jusqu'au {formatDate(user.depositExemptionUntil)}
+                    {new Date(user.depositExemptionUntil).getFullYear() > 2100 
+                      ? "Exemption de caution : Illimitée" 
+                      : `Déblocage actif jusqu'au ${formatDate(user.depositExemptionUntil)}`}
                   </Badge>
                 )}
               </div>
@@ -1499,7 +1501,9 @@ export function UserDetails() {
             {user?.depositExemptionUntil && new Date(user.depositExemptionUntil) > new Date() ? (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
                 <p>
-                  Exemption active jusqu'au: {new Date(user.depositExemptionUntil).toLocaleDateString('fr-FR')}
+                  {new Date(user.depositExemptionUntil).getFullYear() > 2100 
+                    ? "Exemption active : Illimitée" 
+                    : `Exemption active jusqu'au: ${new Date(user.depositExemptionUntil).toLocaleDateString('fr-FR')}`}
                 </p>
               </div>
             ) : (
