@@ -4,25 +4,20 @@
   import path from 'path';
   import { Plugin } from 'vite';
 
-  // Plugin pour fournir un export par défaut pour react-dom (compatibilité React 19)
   const reactDOMCompatPlugin = (): Plugin => {
     return {
       name: 'react-dom-compat',
       enforce: 'pre',
       resolveId(source, importer) {
-        // Intercepter les imports de react-dom depuis node_modules (packages tiers)
         if (source === 'react-dom' && importer?.includes('node_modules')) {
-          // Retourner un ID virtuel pour notre wrapper
           return '\0react-dom-compat';
         }
         return null;
       },
       load(id) {
-        // Charger notre wrapper pour react-dom
         if (id === '\0react-dom-compat') {
           return `
             import * as ReactDOM from 'react-dom';
-            // Fournir un export par défaut pour compatibilité avec les anciens imports
             const ReactDOMDefault = ReactDOM;
             export default ReactDOMDefault;
             export * from 'react-dom';
