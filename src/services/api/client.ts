@@ -7,7 +7,7 @@ export const getApiBaseUrl = (): string => {
     return (import.meta as any).env.VITE_API_URL_PRODUCTION;
   }
   
-  return 'http://localhost:10000/api/v1';
+  return 'http://www.srv884070.hstgr.cloud:22333/api/v1';
 };
 
 const API_BASE_URL = getApiBaseUrl();
