@@ -30,7 +30,7 @@
 
   export default defineConfig({
     plugins: [react(), reactDOMCompatPlugin()],
-    base: process.env.NODE_ENV === 'production' ? '/EcoMobile/' : '/',
+    base: process.env.VITE_BASE_URL || (process.env.NODE_ENV === 'production' && !process.env.VERCEL ? '/EcoMobile/' : '/'),
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
       alias: {
