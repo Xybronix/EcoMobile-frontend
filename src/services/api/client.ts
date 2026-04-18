@@ -1,10 +1,10 @@
 export const getApiBaseUrl = (): string => {
   if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
-    return (import.meta as any).env.VITE_API_URL;
+    return (import.meta as any).env.VITE_API_URL_DEV;
   }
   
   if ((import.meta as any).env.VITE_NODE_ENV === 'production') {
-    return 'https://ecomobile-8bx0.onrender.com/api/v1';
+    return (import.meta as any).env.VITE_API_URL_PRODUCTION;
   }
   
   return 'http://localhost:10000/api/v1';
