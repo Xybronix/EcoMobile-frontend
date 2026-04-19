@@ -1,11 +1,15 @@
 export const getApiBaseUrl = (): string => {
-  // En production, utiliser le domaine via Cloudflare (HTTPS)
-  const meta = (import.meta as any);
-  if (meta && meta.env && (meta.env.PROD || meta.env.VITE_NODE_ENV === 'production')) {
-    return 'https://api.freebike237.com/api/v1';
+  // Détection via l'URL du navigateur (plus fiable que les variables d'env)
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    
+    // Si on est sur le domaine de production ou autre que local
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      return 'https://api.freebike237.com/api/v1';
+    }
   }
-  
-  // En développement, utiliser l'IP ou le localhost
+
+  // Par défaut pour le développement local
   return 'http://www.srv884070.hstgr.cloud:22333/api/v1';
 };
 
