@@ -1,7 +1,7 @@
 export const getApiBaseUrl = (): string => {
   // En production, utiliser le domaine via Cloudflare (HTTPS)
   const meta = (import.meta as any);
-  if (meta.env.PROD || meta.env.VITE_NODE_ENV === 'production') {
+  if (meta && meta.env && (meta.env.PROD || meta.env.VITE_NODE_ENV === 'production')) {
     return 'https://api.freebike237.com/api/v1';
   }
   
