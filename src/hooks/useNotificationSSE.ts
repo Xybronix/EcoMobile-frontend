@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from './useAuth';
 import { notificationService } from '../services/api/notification.service';
-import { getAuthToken } from '../services/api/client';
+import { getAuthToken, getApiBaseUrl } from '../services/api/client';
 
 /** Une seule connexion SSE par URL : évite les doublons si plusieurs composants utilisent le hook */
 let sharedConnection: { url: string; es: EventSource; refCount: number } | null = null;
@@ -27,7 +27,7 @@ export function useNotificationSSE() {
       return;
     }
 
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:10000/api/v1';
+    const apiUrl = getApiBaseUrl();
     const sseUrl = `${apiUrl}/notifications/stream?token=${encodeURIComponent(token)}`;
 
     const fallbackToPolling = () => {
