@@ -61,10 +61,7 @@ export function FinancialDashboard() {
 
     } catch (error) {
       console.error('Erreur lors du chargement des données financières:', error);
-      toast.error('Erreur de connexion au serveur');
-      
-      // Fallback avec données de démonstration
-      loadMockData();
+      toast.error('Erreur de connexion au serveur. Certaines données peuvent être manquantes.');
     } finally {
       setIsLoading(false);
     }
@@ -526,30 +523,30 @@ export function FinancialDashboard() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-4">
                 <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-gray-600 mb-1">Revenus Moyenne/Jour</p>
-                  <p className="text-gray-900">{Math.round(data.stats.todayRevenue).toLocaleString()} FCFA</p>
+                   <p className="text-sm text-gray-600 mb-1">Revenus Moyenne/Jour</p>
+                   <p className="text-gray-900">{Math.round(data.stats.monthRevenue / 30).toLocaleString()} FCFA</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-600 mb-1">Prix Moyen/Heure</p>
-                  <p className="text-gray-900">225 FCFA</p>
+                  <p className="text-gray-900">{Math.round(data.stats.avgPricePerHour)} FCFA</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-600 mb-1">Durée Moyenne</p>
-                  <p className="text-gray-900">38 minutes</p>
+                  <p className="text-gray-900">{Math.round(data.stats.avgRideDuration)} minutes</p>
                 </div>
               </div>
               <div className="space-y-4">
                 <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-gray-600 mb-1">Trajets/Jour</p>
-                  <p className="text-gray-900">{Math.round(data.stats.totalTrips / 30)} trajets</p>
+                  <p className="text-sm text-gray-600 mb-1">Trajets/Jour (Moyenne)</p>
+                  <p className="text-gray-900">{Math.round(data.stats.totalTrips / (daysDifference || 7))} trajets</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-gray-600 mb-1">Taux d'Occupation</p>
-                  <p className="text-gray-900">68%</p>
+                  <p className="text-sm text-gray-600 mb-1">Total Utilisateurs</p>
+                  <p className="text-gray-900">{data.stats.totalUsers} inscrits</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-600 mb-1">Distance Totale</p>
-                  <p className="text-gray-900">1,245 km</p>
+                  <p className="text-gray-900">{Math.round(data.stats.totalDistance)} km</p>
                 </div>
               </div>
             </div>

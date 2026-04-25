@@ -7,6 +7,9 @@ export interface FinancialStats {
   avgRevenuePerTrip: number;
   totalTrips: number;
   totalUsers: number;
+  totalDistance: number;
+  avgRideDuration: number;
+  avgPricePerHour: number;
 }
 
 export interface FinancialData {
