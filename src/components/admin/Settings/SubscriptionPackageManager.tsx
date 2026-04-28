@@ -778,10 +778,10 @@ export function SubscriptionPackageManager() {
               <AlertTriangle className="w-4 h-4 text-yellow-600" />
               <span className="font-medium text-yellow-800">{language === 'fr' ? `${tierConflicts.length} conflit(s) détecté(s)` : `${tierConflicts.length} conflict(s) detected`}</span>
             </div>
-            {tierConflicts.map(({ tier, conflicts }) => (
-              <div key={tier.id} className="text-sm text-yellow-700 ml-6">
-                {conflicts.map(c => (
-                  <div key={c.tierId}>
+            {tierConflicts.map(({ tier, conflicts }, idx) => (
+              <div key={`conflict-${tier.id}-${idx}`} className="text-sm text-yellow-700 ml-6">
+                {conflicts.map((c, cIdx) => (
+                  <div key={`conflict-detail-${tier.id}-${c.tierId}-${cIdx}`}>
                     {tier.name || `${tier.durationMinutes / 60}h`} ↔ {c.tierName} : chevauchement {formatHour(c.overlapStart)}–{formatHour(c.overlapEnd)} → <strong>{c.priorityWinner}</strong> prioritaire
                   </div>
                 ))}
@@ -799,8 +799,8 @@ export function SubscriptionPackageManager() {
           </p>
         ) : (
           <div className="space-y-2">
-            {pricingTiers.map(tier => (
-              <div key={tier.id} className={`flex items-center justify-between p-3 rounded-lg border ${tier.isActive ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-100 opacity-60'}`}>
+            {pricingTiers.map((tier, idx) => (
+              <div key={tier.id || `tier-${idx}`} className={`flex items-center justify-between p-3 rounded-lg border ${tier.isActive ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-100 opacity-60'}`}>
                 <div className="flex items-center gap-3">
                   <div>
                     <div className="flex items-center gap-2">
@@ -1179,7 +1179,7 @@ export function SubscriptionPackageManager() {
                             ? (language === 'fr' ? 'Manuel' : 'Manual')
                             : rule.targetType === 'EXISTING_BY_DAYS'
                               ? (language === 'fr' ? `Après ${rule.targetDaysSinceRegistration} jours` : `After ${rule.targetDaysSinceRegistration} days`)
-                              : (language === 'fr' ? `Après ${rule.targetMinSpend} spent` : `After ${rule.targetMinSpend} spent`)}
+                              : (language === 'fr' ? `Après ${rule.targetMinSpend} FCFA` : `After ${rule.targetMinSpend} spend`)}
                       </Badge>
                       <Badge variant={rule.isActive ? 'default' : 'secondary'}>
                         {rule.isActive ? (language === 'fr' ? 'Active' : 'Active') : (language === 'fr' ? 'Inactive' : 'Inactive')}
@@ -1252,9 +1252,9 @@ export function SubscriptionPackageManager() {
                         />
                         {userSearchResults.length > 0 && (
                           <div className="mt-2 bg-white border rounded-lg max-h-40 overflow-y-auto">
-                            {userSearchResults.map(user => (
+                            {userSearchResults.map((user, uIdx) => (
                               <div
-                                key={user.id}
+                                key={user.id || `user-search-${uIdx}`}
                                 className="p-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center"
                                 onClick={() => handleAddBeneficiary(rule.id, user.id)}
                               >
@@ -1277,8 +1277,8 @@ export function SubscriptionPackageManager() {
                       </h4>
                       {rule.beneficiaries && rule.beneficiaries.length > 0 ? (
                         <div className="space-y-2">
-                          {rule.beneficiaries.map((beneficiary: any) => (
-                            <div key={beneficiary.id} className="bg-white p-3 rounded-lg border flex justify-between items-center">
+                          {rule.beneficiaries.map((beneficiary: any, bIdx: number) => (
+                            <div key={beneficiary.id || `beneficiary-${bIdx}`} className="bg-white p-3 rounded-lg border flex justify-between items-center">
                               <div>
                                 <div className="font-medium">{beneficiary.user?.firstName} {beneficiary.user?.lastName}</div>
                                 <div className="text-sm text-gray-500">{beneficiary.user?.email}</div>
