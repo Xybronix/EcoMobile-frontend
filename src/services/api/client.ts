@@ -10,7 +10,7 @@ export const getApiBaseUrl = (): string => {
   }
 
   // Par défaut pour le développement local
-  return 'http://www.srv884070.hstgr.cloud:22333/api/v1';
+  return 'http://localhost:8080/api/v1';
 };
 
 const API_BASE_URL = getApiBaseUrl();

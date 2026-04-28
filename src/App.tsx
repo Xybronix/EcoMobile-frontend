@@ -57,7 +57,7 @@ export default function App() {
               
               {/* Bike Management */}
               <Route path="bikes" element={<ProtectedAccess mode="route" resource="bikes" action="read"><BikeManagement /></ProtectedAccess>} />
-              <Route path="bikes/actions" element={<ProtectedAccess mode="route" resource="bikes" action="manage_actions"><BikeActionManagement /></ProtectedAccess>} />
+              <Route path="unlocks" element={<ProtectedAccess mode="route" resource="bikes" action="manage_actions"><BikeActionManagement /></ProtectedAccess>} />
               <Route path="bikes/:id" element={<ProtectedAccess mode="route" resource="bikes" action="read"><BikeDetails /></ProtectedAccess>} />
               <Route path="bikes/:id/trips" element={<ProtectedAccess mode="route" resource="bikes" action="view_trips"><BikeTripHistory /></ProtectedAccess>} />
               <Route path="bikes/:id/maintenance" element={<ProtectedAccess mode="route" resource="bikes" action="view_maintenance"><BikeMaintenanceHistory /></ProtectedAccess>} />
