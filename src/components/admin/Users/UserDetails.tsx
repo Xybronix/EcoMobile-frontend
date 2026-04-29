@@ -1058,8 +1058,13 @@ export function UserDetails() {
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              const baseUrl = ((import.meta as any).env.VITE_API_URL).replace('/api/v1', '');
-                              window.open(`${baseUrl}${doc.frontImage}`, '_blank');
+                              const apiUrl = (import.meta as any).env.VITE_API_URL || '';
+                              const baseUrl = apiUrl.replace('/api/v1', '');
+                              if (doc.frontImage) {
+                                window.open(`${baseUrl}${doc.frontImage}`, '_blank');
+                              } else {
+                                toast.error('Image recto non disponible');
+                              }
                             }}
                           >
                             <Download className="w-4 h-4 mr-2" />
@@ -1070,8 +1075,13 @@ export function UserDetails() {
                               variant="outline"
                               size="sm"
                               onClick={() => {
-                                const baseUrl = ((import.meta as any).env.VITE_API_URL).replace('/api/v1', '');
-                                window.open(`${baseUrl}${doc.backImage}`, '_blank');
+                                const apiUrl = (import.meta as any).env.VITE_API_URL || '';
+                                const baseUrl = apiUrl.replace('/api/v1', '');
+                                if (doc.backImage) {
+                                  window.open(`${baseUrl}${doc.backImage}`, '_blank');
+                                } else {
+                                  toast.error('Image verso non disponible');
+                                }
                               }}
                             >
                               <Download className="w-4 h-4 mr-2" />
@@ -1083,8 +1093,13 @@ export function UserDetails() {
                               variant="outline"
                               size="sm"
                               onClick={() => {
-                                const baseUrl = ((import.meta as any).env.VITE_API_URL).replace('/api/v1', '');
-                                window.open(`${baseUrl}${doc.selfieImage}`, '_blank');
+                                const apiUrl = (import.meta as any).env.VITE_API_URL || '';
+                                const baseUrl = apiUrl.replace('/api/v1', '');
+                                if (doc.selfieImage) {
+                                  window.open(`${baseUrl}${doc.selfieImage}`, '_blank');
+                                } else {
+                                  toast.error('Image selfie non disponible');
+                                }
                               }}
                             >
                               <Download className="w-4 h-4 mr-2" />
@@ -1196,8 +1211,13 @@ export function UserDetails() {
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            const baseUrl = (((import.meta as any).env.VITE_API_URL)).replace('/api/v1', '');
-                            window.open(`${baseUrl}${documentsStatus.residenceProof?.documentFile}`, '_blank');
+                            const apiUrl = (import.meta as any).env.VITE_API_URL || '';
+                            const baseUrl = apiUrl.replace('/api/v1', '');
+                            if (documentsStatus.residenceProof?.documentFile) {
+                              window.open(`${baseUrl}${documentsStatus.residenceProof.documentFile}`, '_blank');
+                            } else {
+                              toast.error('Document non disponible');
+                            }
                           }}
                         >
                           <Download className="w-4 h-4 mr-2" />
@@ -1308,8 +1328,13 @@ export function UserDetails() {
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            const baseUrl = (((import.meta as any).env.VITE_API_URL)).replace('/api/v1', '');
-                            window.open(`${baseUrl}${documentsStatus.activityLocationProof?.documentFile}`, '_blank');
+                            const apiUrl = (import.meta as any).env.VITE_API_URL || '';
+                            const baseUrl = apiUrl.replace('/api/v1', '');
+                            if (documentsStatus.activityLocationProof?.documentFile) {
+                              window.open(`${baseUrl}${documentsStatus.activityLocationProof.documentFile}`, '_blank');
+                            } else {
+                              toast.error('Document non disponible');
+                            }
                           }}
                         >
                           <Download className="w-4 h-4 mr-2" />

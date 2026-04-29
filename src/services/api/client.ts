@@ -1,16 +1,5 @@
 export const getApiBaseUrl = (): string => {
-  // Détection via l'URL du navigateur (plus fiable que les variables d'env)
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname;
-    
-    // Si on est sur le domaine de production ou autre que local
-    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      return 'https://api.freebike237.com/api/v1';
-    }
-  }
-
-  // Par défaut pour le développement local
-  return 'http://localhost:8080/api/v1';
+  return (import.meta as any).env.VITE_API_URL;
 };
 
 const API_BASE_URL = getApiBaseUrl();
