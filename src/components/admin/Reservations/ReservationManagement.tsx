@@ -6,6 +6,7 @@ import { Badge } from '../../ui/badge';
 import { Button } from '../../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../ui/dialog';
+import { Pagination } from '../../Pagination';
 import { reservationService } from '../../../services/api/reservation.service';
 import { toast } from 'sonner';
 import { useTranslation } from '../../../lib/i18n';
@@ -254,6 +255,19 @@ export function ReservationManagement() {
           </Card>
         ))}
       </div>
+
+      {/* Pagination */}
+      {pagination && pagination.total > 0 && (
+        <div className="p-4 border-t bg-white rounded-lg shadow-sm">
+          <Pagination
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.total}
+            itemsPerPage={pagination.limit}
+            onPageChange={(page) => setPagination({ ...pagination, page })}
+          />
+        </div>
+      )}
 
       {/* Reservation Details Dialog */}
       {selectedReservation && (
