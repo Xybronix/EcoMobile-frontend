@@ -59,6 +59,8 @@ const translations: Translations = {
   'bikes.gsmSignal': { fr: 'Signal GSM', en: 'GSM Signal' },
   'bikes.zone': { fr: 'Zone', en: 'Zone' },
   'bikes.speed': { fr: 'Vitesse', en: 'Speed' },
+  'bikes.gpsDeviceId': { fr: 'ID GPS (optionnel)', en: 'GPS ID (optional)' },
+  'bikes.gpsDeviceIdDescription': { fr: 'Identifiant du dispositif GPS pour synchronisation automatique', en: 'GPS device identifier for automatic synchronization' },
 
   // Bike actions (déverrouillage / verrouillage)
   'bikeActions.management': { fr: 'Gestion des Actions Vélos', en: 'Bike Action Management' },

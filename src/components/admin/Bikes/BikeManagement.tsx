@@ -317,9 +317,9 @@ export function BikeManagement() {
 
       setIsAddDialogOpen(false);
       await loadBikes();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erreur lors de la création:', error);
-      toast.error(t('bikes.createError'));
+      toast.error(error.message || t('bikes.createError'));
     }
   };
 
@@ -348,9 +348,9 @@ export function BikeManagement() {
 
       setIsEditDialogOpen(false);
       await loadBikes();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erreur lors de la modification:', error);
-      toast.error(t('bikes.updateError'));
+      toast.error(error.message || t('bikes.updateError'));
     }
   };
 
@@ -689,14 +689,14 @@ export function BikeManagement() {
             </div>
 
             <div>
-              <Label>ID GPS (optionnel)</Label>
+              <Label>{t('bikes.gpsDeviceId')}</Label>
               <Input
                 value={formData.gpsDeviceId || ''}
                 onChange={(e) => setFormData({ ...formData, gpsDeviceId: e.target.value })}
                 placeholder="GPS-12345"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Identifiant du dispositif GPS pour synchronisation automatique
+                {t('bikes.gpsDeviceIdDescription')}
               </p>
             </div>
 
@@ -770,6 +770,18 @@ export function BikeManagement() {
                 />
                 {formErrors.model && <p className="text-xs text-red-500 mt-1">{formErrors.model}</p>}
               </div>
+            </div>
+
+            <div>
+              <Label>{t('bikes.gpsDeviceId')}</Label>
+              <Input
+                value={formData.gpsDeviceId || ''}
+                onChange={(e) => setFormData({ ...formData, gpsDeviceId: e.target.value })}
+                placeholder="GPS-12345"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                {t('bikes.gpsDeviceIdDescription')}
+              </p>
             </div>
 
             <div>
