@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Bike as BikeIcon, Battery, MapPin, Signal, ArrowLeft, Activity, Settings } from 'lucide-react';
+import { Bike as BikeIcon, Battery, MapPin, Signal, ArrowLeft, Activity, Settings, ShieldOff, UserX, X, Search } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
 import { Card } from '../../ui/card';
 import { bikeService } from '../../../services/api/bike.service';
+import { adminService } from '../../../services/api/admin.service';
 import { useTranslation } from '../../../lib/i18n';
 import { toast } from 'sonner';
 
@@ -15,7 +16,14 @@ export function BikeDetails() {
   const [bike, setBike] = useState<any>(null);
   const [bikeStats, setBikeStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  
+
+  const [blockedUsers, setBlockedUsers] = useState<any[]>([]);
+  const [blockLoading, setBlockLoading] = useState(false);
+  const [userSearch, setUserSearch] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const onBack = () => navigate('/admin/bikes');
   const onNavigateToTrips = () => navigate(`/admin/bikes/${id}/trips`);
   const onNavigateToMaintenance = () => navigate(`/admin/bikes/${id}/maintenance`);
@@ -24,13 +32,14 @@ export function BikeDetails() {
   useEffect(() => {
     if (id) {
       loadBikeData();
+      loadBlockedUsers();
     }
   }, [id]);
 
   const loadBikeData = async () => {
     try {
       setLoading(true);
-      
+
       const [bikeData, statsData] = await Promise.all([
         bikeService.getBikeById(id!),
         bikeService.getBikeStats(id!)
@@ -43,6 +52,64 @@ export function BikeDetails() {
       toast.error('Erreur lors du chargement des données du vélo');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadBlockedUsers = async () => {
+    try {
+      const data = await adminService.getBlockedUsersForBike(id!);
+      setBlockedUsers(data);
+    } catch (error) {
+      console.error('Error loading blocked users:', error);
+    }
+  };
+
+  const handleUserSearch = (query: string) => {
+    setUserSearch(query);
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    if (!query.trim()) { setSearchResults([]); return; }
+    searchTimeout.current = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const results = await adminService.searchFreeDaysUsers(query);
+        setSearchResults(results);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+  };
+
+  const handleBlockUser = async (userId: string) => {
+    if (blockedUsers.some(b => b.userId === userId)) {
+      toast.error('Cet utilisateur est déjà bloqué pour ce vélo');
+      return;
+    }
+    setBlockLoading(true);
+    try {
+      await adminService.blockUserFromBike(id!, userId);
+      toast.success('Utilisateur bloqué pour ce vélo');
+      setUserSearch('');
+      setSearchResults([]);
+      await loadBlockedUsers();
+    } catch (error: any) {
+      toast.error(error.message || 'Erreur lors du blocage');
+    } finally {
+      setBlockLoading(false);
+    }
+  };
+
+  const handleUnblockUser = async (userId: string) => {
+    setBlockLoading(true);
+    try {
+      await adminService.unblockUserFromBike(id!, userId);
+      toast.success('Blocage supprimé');
+      await loadBlockedUsers();
+    } catch (error: any) {
+      toast.error(error.message || 'Erreur lors de la suppression du blocage');
+    } finally {
+      setBlockLoading(false);
     }
   };
 
@@ -254,6 +321,95 @@ export function BikeDetails() {
           </div>
         </Card>
       )}
+
+      {/* Utilisateurs bloqués */}
+      <Card className="p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <ShieldOff className="w-5 h-5 text-red-500" />
+          <h3 className="mb-0">Accès restreint</h3>
+          <Badge variant="secondary">{blockedUsers.length}</Badge>
+        </div>
+        <p className="text-sm text-gray-500 mb-4">
+          Les utilisateurs listés ici ne verront pas ce vélo et ne pourront pas le déverrouiller.
+        </p>
+
+        {/* Recherche et ajout */}
+        <div className="relative mb-4">
+          <div className="flex items-center gap-2 border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-green-500">
+            <Search className="w-4 h-4 text-gray-400 shrink-0" />
+            <input
+              type="text"
+              placeholder="Rechercher un utilisateur à bloquer..."
+              value={userSearch}
+              onChange={(e) => handleUserSearch(e.target.value)}
+              className="flex-1 outline-none text-sm bg-transparent"
+            />
+            {userSearch && (
+              <button type="button" aria-label="Effacer la recherche" onClick={() => { setUserSearch(''); setSearchResults([]); }}>
+                <X className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+              </button>
+            )}
+          </div>
+          {searchResults.length > 0 && (
+            <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+              {isSearching ? (
+                <div className="p-3 text-center text-sm text-gray-500">Recherche...</div>
+              ) : (
+                searchResults
+                  .filter(u => !blockedUsers.some(b => b.userId === u.id))
+                  .map(user => (
+                    <button
+                      key={user.id}
+                      type="button"
+                      onClick={() => handleBlockUser(user.id)}
+                      disabled={blockLoading}
+                      className="w-full flex items-center gap-3 p-3 hover:bg-red-50 text-left border-b last:border-0 transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-sm font-medium shrink-0">
+                        {user.firstName?.[0]}{user.lastName?.[0]}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{user.firstName} {user.lastName}</p>
+                        <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                      </div>
+                      <span className="ml-auto text-xs text-red-500 shrink-0">Bloquer</span>
+                    </button>
+                  ))
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Liste des utilisateurs bloqués */}
+        {blockedUsers.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-4">Aucun utilisateur bloqué</p>
+        ) : (
+          <div className="space-y-2">
+            {blockedUsers.map(block => (
+              <div key={block.id} className="flex items-center gap-3 p-3 bg-red-50 border border-red-100 rounded-lg">
+                <div className="w-9 h-9 rounded-full bg-red-200 flex items-center justify-center text-red-700 text-sm font-medium shrink-0">
+                  {block.user?.firstName?.[0]}{block.user?.lastName?.[0]}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {block.user?.firstName} {block.user?.lastName}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">{block.user?.email}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleUnblockUser(block.userId)}
+                  disabled={blockLoading}
+                  className="shrink-0 p-1.5 rounded hover:bg-red-200 text-red-600 transition-colors"
+                  title="Supprimer le blocage"
+                >
+                  <UserX className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
 
       {/* Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -470,6 +470,25 @@ export class AdminService {
     if (!response.success || !response.data) throw new Error(response.error || 'Erreur');
     return response.data;
   }
+
+  // ─── Bike User Blocks ─────────────────────────────────────────────────────
+
+  async getBlockedUsersForBike(bikeId: string): Promise<any[]> {
+    const response = await apiClient.get<any[]>(`/admin/bikes/${bikeId}/blocked-users`);
+    if (!response.success || !response.data) throw new Error(response.error || 'Erreur');
+    return response.data;
+  }
+
+  async blockUserFromBike(bikeId: string, userId: string): Promise<any> {
+    const response = await apiClient.post<any>(`/admin/bikes/${bikeId}/block-user/${userId}`, {});
+    if (!response.success || !response.data) throw new Error(response.error || 'Erreur');
+    return response.data;
+  }
+
+  async unblockUserFromBike(bikeId: string, userId: string): Promise<void> {
+    const response = await apiClient.delete<void>(`/admin/bikes/${bikeId}/block-user/${userId}`);
+    if (!response.success) throw new Error(response.error || 'Erreur');
+  }
 }
 
 export interface AppVersionManifest {
