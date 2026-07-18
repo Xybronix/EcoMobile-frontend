@@ -31,7 +31,7 @@
             "@radix-ui/react-toggle-group": "^1.1.2",
             "@radix-ui/react-tooltip": "^1.1.8",
             "@react-google-maps/api": "^2.20.8",
-            "@vitejs/plugin-react-swc": "^3.10.2",
+            "@vitejs/plugin-react-swc": "^4.3.1",
             "axios": "*",
             "bcryptjs": "*",
             "cassandra-driver": "*",
@@ -63,9 +63,9 @@
             "react-hook-form": "^7.55.0",
             "react-leaflet": "^5.0.0",
             "react-resizable-panels": "^2.1.7",
-            "react-router-dom": "^7.9.4",
+            "react-router-dom": "^7.18.1",
             "recharts": "^2.15.2",
-            "serve": "^14.2.4",
+            "serve": "^14.2.6",
             "sonner": "^2.0.7",
             "sqlite3": "*",
             "swagger-jsdoc": "*",
@@ -73,7 +73,7 @@
             "tailwind-merge": "*",
             "uuid": "*",
             "vaul": "^1.1.2",
-            "vite": "^6.4.1"
+            "vite": "^8.1.5"
       },
       "devDependencies": {
             "@types/leaflet": "^1.9.21",
